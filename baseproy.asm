@@ -119,7 +119,7 @@ pausa			equ 	2
 ;////////////////////////////////////////////////////
 titulo 			db 		"TETRIS"
 finTitulo 		db 		""
-levelStr 		db 		"LEVEL"
+levelStr 		db 		"NIVEL"
 finLevelStr 	db 		""
 linesStr 		db 		"LINES"
 finLinesStr 	db 		""
