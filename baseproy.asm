@@ -114,7 +114,7 @@ sinvertida 		equ 	6
 ;status
 paro 			equ 	0
 activo 			equ 	1
-pausa			equ 	2
+pausa			equ 	2pieza_col
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;////////////////////////////////////////////////////
@@ -143,6 +143,10 @@ pieza_ren		db 		ini_renglon
 ;El arreglo cols guarda las columnas, y rens los renglones
 pieza_cols 		db 		0,0,0,0
 pieza_rens 		db 		0,0,0,0
+;Matrix de figura (Muestra el estado actual de la figura en una matriz binaria
+cm_r1			db		0,0,0			; Current_matriz
+cm_r2			db		0,0,0
+cm_r3			db		0,0,0
 ;Valor de la pieza actual correspondiente a las constantes Piezas
 pieza_actual 	db 		linvertida
 ;Color de la pieza actual, correspondiente a los colores del carácter
@@ -338,6 +342,7 @@ delimita_mouse_h 	macro minimo,maximo
 	mov ax,7		;opcion 7
 	int 33h			;llama interrupcion 33h para manejo del mouse
 endm
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;Fin Macros;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -361,9 +366,6 @@ imprime_ui:
 	call DIBUJA_NEXT
 	call DIBUJA_ACTUAL
 	
-	add [pieza_ren],6
-
-	call DIBUJA_ACTUAL
 
 	muestra_cursor_mouse 	;hace visible el cursor del mouse
 	posiciona_cursor_mouse 320d,16d	;establece la posición del mouse
@@ -387,6 +389,8 @@ teclado:
     je salir
     cmp al,105
     je keyi
+	cmp al, 106 ; j chequer  (rota a la derecha)
+	je keyj
     cmp al,120 ;x Dummy key (Para utilizar el mouse primero se tiene que dar x
     			; antes de cada click)
    	je mouse
@@ -394,43 +398,72 @@ teclado:
 keyi:
 
 	jmp teclado
-keya:
+keya: ; Desplazamiento a la izquierda
 	cmp [y],1
 	je teclado
-	posiciona_cursor [x],[y]
-	mov [flagBorrar],1
-	call DIBUJA_CUADRO 
-	dec [y]
-	posiciona_cursor [x],[y]
-	mov [flagBorrar],0
-	call DIBUJA_CUADRO
+
+	; posiciona_cursor [x],[y]
+	; mov [flagBorrar],1
+	; call DIBUJA_ACTUAL
+	; dec [y]
+	; posiciona_cursor [x],[y]
+	; mov [flagBorrar],0
+	; call DIBUJA_ACTUAL
+
+	;posiciona_cursor [pieza_col],[pieza_ren]
+	;mov [flagBorrar],1
+	;call DIBUJA_ACTUAL
+	;posiciona_cursor [pieza_col],[pieza_ren]
+
+	call BORRA_PIEZA
+	dec [pieza_col]
+	posiciona_cursor [pieza_col],[pieza_ren]
+	call DIBUJA_PIEZA
 
 	
 	jmp teclado
 keys:
 	cmp [x],23
-	je teclado
-	posiciona_cursor [x],[y]
-	mov [flagBorrar],1
-	call DIBUJA_CUADRO 
-	inc [x]
-	posiciona_cursor [x],[y]
-	mov [flagBorrar],0
-	call DIBUJA_CUADRO 
+	je teclado 
+	; posiciona_cursor [x],[y]
+	; mov [flagBorrar],1
+	; call DIBUJA_CUADRO 
+	; inc [x]
+	; posiciona_cursor [x],[y]
+	; mov [flagBorrar],0
+	; call DIBUJA_CUADRO 
+
+	call BORRA_PIEZA
+	inc [pieza_ren]
+	posiciona_cursor [pieza_col],[pieza_ren]
+	call DIBUJA_PIEZA
 
 	jmp teclado
-keyd:
-	cmp [y],30
-	je teclado
-	posiciona_cursor [x],[y]
-	mov [flagBorrar],1
-	call DIBUJA_CUADRO 
-	inc [y]
-	posiciona_cursor [x],[y]
-	mov [flagBorrar],0
-	call DIBUJA_CUADRO 
+keyd: ;Desplazamiento a la derecha
+	; cmp [y],30
+	; je teclado
+	; posiciona_cursor [x],[y]
+	; mov [flagBorrar],1
+	; call DIBUJA_CUADRO 
+	; inc [y]
+	; posiciona_cursor [x],[y]
+	; mov [flagBorrar],0
+	; call DIBUJA_CUADRO 
+	
+	call BORRA_PIEZA
+	inc [pieza_col]
+	posiciona_cursor [pieza_col],[pieza_ren]
+	call DIBUJA_ACTUAL
 	
 	jmp teclado
+
+keyj:
+	call BORRA_PIEZA
+	call ROT_MATRIX_HOR
+	call CODEC_MATRIX_3x3
+	call DIBUJA_PIEZA
+	jmp teclado
+
 
 ;Lee el mouse y avanza hasta que se haga clic en el boton izquierdo
 mouse:
@@ -775,6 +808,7 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de cuadro
 	DIBUJA_CUADRO proc
+	
 		mov [pieza_color],cAmarillo
 		mov al,[x]
 		mov ah,[y]
@@ -797,6 +831,12 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de línea
 	DIBUJA_LINEA proc
+	;	mov [cm_r2],1		; 0 0 0 0
+	;	mov [cm_r2+1],1  	; 1 1 1 1
+	;	mov [cm_r2+2],1		; 0 0 0 0
+	;	mov [cm_r2+3],1		; 0 0 0 0
+
+
 		mov [pieza_color],cCyanClaro
 		mov al,[ren_aux]
 		mov ah,[col_aux]
@@ -818,6 +858,11 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de L
 	DIBUJA_L proc
+		mov [cm_r2],1		; 0	0 0
+		mov [cm_r2+1],1	  	; 1 1 1 
+		mov [cm_r2+2],1		; 1 0 0
+		mov [cm_r3],1		
+
 		mov [pieza_color],cCafe
 		mov al,[ren_aux]
 		mov ah,[col_aux]
@@ -841,7 +886,14 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de L invertida
 	DIBUJA_L_INVERTIDA proc
+		mov [cm_r2],1		; 0 0 0 
+		mov [cm_r2+1],1  	; 1 1 1 
+		mov [cm_r2+2],1		; 0 0 1 
+		mov [cm_r3+2],1		 
+
+		call CODEC_MATRIX_3x3
 		mov [pieza_color],cAzul
+		
 		mov al,[ren_aux]
 		mov ah,[col_aux]
 		inc al
@@ -862,6 +914,11 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de T
 	DIBUJA_T proc
+		mov [cm_r2],1		; 0 0 0 
+		mov [cm_r2+1],1  	; 1 1 1 
+		mov [cm_r2+2],1		; 0 1 0 
+		mov [cm_r3+1],1	
+
 		mov [pieza_color],cMagenta
 		mov al,[ren_aux]
 		mov ah,[col_aux]
@@ -884,6 +941,11 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de S
 	DIBUJA_S proc
+		mov [cm_r2+1],1		; 0 0 0 
+		mov [cm_r2+2],1  	; 0 1 1 
+		mov [cm_r3],1		; 1 1 0 
+		mov [cm_r3+1],1		
+
 		mov [pieza_color],cVerdeClaro
 		mov al,[ren_aux]
 		mov ah,[col_aux]
@@ -905,6 +967,11 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de S invertida
 	DIBUJA_S_INVERTIDA proc
+		mov [cm_r2],1		; 0 0 0 
+		mov [cm_r2+1],1  	; 1 1 0 
+		mov [cm_r3+1],1		; 0 1 1 
+		mov [cm_r3+2],1		
+
 		mov [pieza_color],cRojoClaro
 		mov al,[ren_aux]
 		mov ah,[col_aux]
@@ -949,6 +1016,26 @@ salir:				;inicia etiqueta salir
 		inc si
 		loop loop_dibuja_pieza
 		ret
+	endp
+	
+   BORRA_PIEZA proc
+		lea di,[pieza_cols]
+		lea si,[pieza_rens]
+		mov cx,4
+	loop_borra_pieza:
+		push cx
+		push si
+		push di
+		posiciona_cursor [si],[di]
+		imprime_caracter_color 254,0,0
+		pop di
+		pop si
+		pop cx
+		inc di
+		inc si
+		loop loop_borra_pieza
+		ret
+
 	endp
 
 	;DIBUJA_NEXT - se usa para imprimir la pieza siguiente en pantalla
@@ -1070,6 +1157,98 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 
+	CLEAN_CURRENT_MATRIX proc 	;Limpia la matriz binaria 3x3 que se usa para las piezas
+		mov [cm_r1],0
+		mov [cm_r1+1],0
+		mov [cm_r1+2],0
+		mov [cm_r2],0
+		mov [cm_r2+1],0
+		mov [cm_r2+2],0
+		mov [cm_r3],0
+		mov [cm_r3+1],0
+		mov [cm_r3+2],0
+		
+	endp
+
+	CODEC_MATRIX_3x3 proc ; Realiza una codificación. Donde haya 1's en su matriz, crea una coordenada para di y si
+	verificaion:
+		lea di,[pieza_cols]
+		lea si,[pieza_rens]
+		mov al,[ren_aux]
+		mov ah,[col_aux]
+	asig11:				; Si es 1, lo guarda en la pila, sigue verificando
+		cmp [cm_r1],1
+		jnz asig12
+		push ax
+	asig12:
+		cmp [cm_r1+1],1
+		jnz asig13
+		push ax
+	asig13:
+		cmp [cm_r1+2],1
+		jnz asig21
+		push ax
+	asig21:
+		cmp [cm_r2],1
+		jnz asig22
+		push ax
+	asig22:
+		cmp [cm_r2+1],1
+		jnz asig23
+		push ax
+	asig23:
+		cmp [cm_r2+2],1
+		jnz asig31
+		push ax
+	asig31:
+		cmp [cm_r3],1
+		jnz asig32
+		push ax
+	asig32:
+		cmp [cm_r3+1],1
+		jnz asig33
+		push ax
+	asig33:
+		cmp [cm_r3+2],1
+		jnz coordenadas
+		push ax
+	coordenadas:	; Los bits que fueron 1 se reajustan como coordenadas para dibujar las figuras respectivas 
+		pop ax
+		mov [di], ah  ; x
+		mov [si], al   ; y
+		pop ax
+		mov [di+1], ah
+		mov [si+1], al
+		pop ax
+		mov [di+2], ah
+		mov [si+2], al
+		pop ax
+		mov [di+3], ah
+		mov [si+3], al
+		ret
+	endp
+
+	ROT_MATRIX_HOR proc ;ah auxiliar 1, al auxiliar2
+		mov ah, [cm_r1]
+		mov al, [cm_r3]
+		mov cm_r1,al
+		mov al, [cm_r3+2]
+		mov cm_r3,al
+		mov al, [cm_r1+2]
+		mov [cm_r3+2],al
+		mov [cm_r1+2],ah
+
+		mov ah, [cm_r1+1]
+		mov al, [cm_r2]
+		mov [cm_r1+1],al
+		mov al, [cm_r3+1]
+		mov [cm_r2],al
+		mov al, [cm_r2+2]
+		mov [cm_r3+1],al
+		mov [cm_r2+2],ah
+		ret
+	endp
+
 	BORRA_PIEZA_ACTUAL proc
 		;Implementar
 		ret
@@ -1080,13 +1259,12 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 
-	BORRA_PIEZA proc
-		;implementar
-		ret
-	endp
 
 	GIRO_DER proc
-		;implementar
+		call ROT_MATRIX_HOR
+		call CODEC_MATRIX_3x3
+		call DIBUJA_PIEZA
+
 		ret
 	endp
 
