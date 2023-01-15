@@ -1020,7 +1020,7 @@ salir:				;inicia etiqueta salir
 	endp
 
 	BORRA_PIEZA_ACTUAL proc
-		mov [aux1],3
+		mov [aux1],4
 		borrar_pieza_actual:
 			dibuja_linea_negra [pieza_ren]
 			inc [pieza_ren]
