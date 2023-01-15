@@ -1277,10 +1277,10 @@ salir:				;inicia etiqueta salir
 
 
 	GIRO_DER proc
-		;call BORRA_PIEZA
-		;call ROT_MATRIX_HOR
-		;call CODEC_MATRIX_3x3
-		;call DIBUJA_PIEZA
+		call BORRA_PIEZA
+		call ROT_MATRIX_HOR
+		call CODEC_MATRIX_3x3
+		call DIBUJA_PIEZA
 
 		ret
 	endp
