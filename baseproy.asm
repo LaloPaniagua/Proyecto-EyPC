@@ -368,6 +368,30 @@ imprime_ui:
 ;Si el botón está suelto, continúa a la sección "mouse"
 ;si no, se mantiene indefinidamente en "mouse_no_clic" hasta que se suelte
 mouse_no_clic:
+	
+;;;;;;;;;;;;;;CONTROL DE TECLADO (SO FAR);;;;;;;;;;;;;;;
+teclado:
+	mov ah, 01h ;
+    int 16h
+    cmp ax,0
+    jnz no_key ; Si no se ha presionado una tecla
+	mov ah, 0  ; Se lee la tecla del teclado cuando el mouse no se presiona
+    int 16h 
+    cmp al,97 ; a checker (izquierda)
+    je keya 
+    cmp al,100 ; d checker (derecha)
+    je keyd
+    cmp al,115 ; s chechker (baja)
+    je keys
+    cmp al,113 ; q checker (Sale del programa)
+    je salir
+
+keya:
+	imprime_caracter_color 
+keys:
+keyd:
+
+no_key:
 	lee_mouse
 	test bx,0001h
 	jnz mouse_no_clic
