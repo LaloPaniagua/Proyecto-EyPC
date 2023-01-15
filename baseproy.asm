@@ -373,7 +373,7 @@ imprime_ui:
 
 	call BORRA_PIEZA_ACTUAL
 
-	add [pieza_ren],6
+	;add [pieza_ren],6
 
 	call DIBUJA_ACTUAL
 
@@ -1027,7 +1027,7 @@ salir:				;inicia etiqueta salir
 			dec [aux1]
 			cmp [aux1],0
 			jnz borrar_pieza_actual
-		sub [pieza_ren],3
+		sub [pieza_ren],4
 		ret
 	endp
 
