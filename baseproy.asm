@@ -3,6 +3,8 @@ title "Proyecto: Tetris" ;codigo opcional. Descripcion breve del programa, el te
 	.386			;directiva para indicar version del procesador
 	.stack 512 		;Define el tamano del segmento de stack, se mide en bytes
 	.data			;Definicion del segmento de datos
+	x db 6
+	y db  6
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Definición de constantes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -368,13 +370,10 @@ imprime_ui:
 ;Si el botón está suelto, continúa a la sección "mouse"
 ;si no, se mantiene indefinidamente en "mouse_no_clic" hasta que se suelte
 mouse_no_clic:
-	
 ;;;;;;;;;;;;;;CONTROL DE TECLADO (SO FAR);;;;;;;;;;;;;;;
 teclado:
-	mov ah, 01h ;
+	mov ah, 01h ; OJO TIENE QUE ESTAR EN MINUSCULAS PARA FUNCIONAR
     int 16h
-    cmp ax,0
-    jnz no_key ; Si no se ha presionado una tecla
 	mov ah, 0  ; Se lee la tecla del teclado cuando el mouse no se presiona
     int 16h 
     cmp al,97 ; a checker (izquierda)
@@ -385,16 +384,49 @@ teclado:
     je keys
     cmp al,113 ; q checker (Sale del programa)
     je salir
+    cmp al,105
+    je keyi
+    cmp al,120 ;x Dummy key (Para utilizar el mouse primero se tiene que dar x
+    			; antes de cada click)
+   	je mouse
+   	jmp teclado
+keyi:
 
+	call DIBUJA_CUADRO
+	jmp teclado
 keya:
-	imprime_caracter_color 
-keys:
-keyd:
+	cmp [y],1
+	je teclado
+	posiciona_cursor [x],[y]
+	imprime_caracter_color 254,0h,0h 
+	dec [y]
+	posiciona_cursor [x],[y]
+	imprime_caracter_color 254,0Fh,0F0h 
 
-no_key:
-	lee_mouse
-	test bx,0001h
-	jnz mouse_no_clic
+	
+	jmp teclado
+keys:
+	cmp [x],23
+	je teclado
+	posiciona_cursor [x],[y]
+	imprime_caracter_color 254,0h,0h 
+	inc [x]
+	posiciona_cursor [x],[y]
+	imprime_caracter_color 254,0Fh,0F0h 
+	
+
+	jmp teclado
+keyd:
+	cmp [y],30
+	je teclado
+	posiciona_cursor [x],[y]
+	imprime_caracter_color 254,0h,0h 
+	inc [y]
+	posiciona_cursor [x],[y]
+	imprime_caracter_color 254,0Fh,0F0h 
+	
+	jmp teclado
+
 ;Lee el mouse y avanza hasta que se haga clic en el boton izquierdo
 mouse:
 	lee_mouse
@@ -739,8 +771,8 @@ salir:				;inicia etiqueta salir
 	;Procedimiento para dibujar una pieza de cuadro
 	DIBUJA_CUADRO proc
 		mov [pieza_color],cAmarillo
-		mov al,[ren_aux]
-		mov ah,[col_aux]
+		mov al,[x]
+		mov ah,[y]
 		inc al
 		inc ah
 		mov [si],al
