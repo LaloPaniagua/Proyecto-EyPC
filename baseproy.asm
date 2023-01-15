@@ -5,6 +5,7 @@ title "Proyecto: Tetris" ;codigo opcional. Descripcion breve del programa, el te
 	.data			;Definicion del segmento de datos
 	x db 6
 	y db  6
+	flagBorrar db 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Definición de constantes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -392,16 +393,17 @@ teclado:
    	jmp teclado
 keyi:
 
-	call DIBUJA_CUADRO
 	jmp teclado
 keya:
 	cmp [y],1
 	je teclado
 	posiciona_cursor [x],[y]
-	imprime_caracter_color 254,0h,0h 
+	mov [flagBorrar],1
+	call DIBUJA_CUADRO 
 	dec [y]
 	posiciona_cursor [x],[y]
-	imprime_caracter_color 254,0Fh,0F0h 
+	mov [flagBorrar],0
+	call DIBUJA_CUADRO
 
 	
 	jmp teclado
@@ -409,21 +411,24 @@ keys:
 	cmp [x],23
 	je teclado
 	posiciona_cursor [x],[y]
-	imprime_caracter_color 254,0h,0h 
+	mov [flagBorrar],1
+	call DIBUJA_CUADRO 
 	inc [x]
 	posiciona_cursor [x],[y]
-	imprime_caracter_color 254,0Fh,0F0h 
-	
+	mov [flagBorrar],0
+	call DIBUJA_CUADRO 
 
 	jmp teclado
 keyd:
 	cmp [y],30
 	je teclado
 	posiciona_cursor [x],[y]
-	imprime_caracter_color 254,0h,0h 
+	mov [flagBorrar],1
+	call DIBUJA_CUADRO 
 	inc [y]
 	posiciona_cursor [x],[y]
-	imprime_caracter_color 254,0Fh,0F0h 
+	mov [flagBorrar],0
+	call DIBUJA_CUADRO 
 	
 	jmp teclado
 
@@ -930,7 +935,13 @@ salir:				;inicia etiqueta salir
 		push si
 		push di
 		posiciona_cursor [si],[di]
+		cmp [flagBorrar],1
+		je borra
 		imprime_caracter_color 254,[pieza_color],bgGrisOscuro
+		jmp sigue
+		borra:
+		imprime_caracter_color 254,0h,0h
+		sigue:
 		pop di
 		pop si
 		pop cx
