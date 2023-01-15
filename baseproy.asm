@@ -335,6 +335,19 @@ delimita_mouse_h 	macro minimo,maximo
 	mov ax,7		;opcion 7
 	int 33h			;llama interrupcion 33h para manejo del mouse
 endm
+
+;Imprime una línea negra en el área de juego
+dibuja_linea_negra 	macro renglon
+	mov cx,30
+	linea_negra:
+		posiciona_cursor renglon,cl
+		mov dx,cx
+		imprime_caracter_color 254,cNegro,bgNegro
+		mov cx,dx
+		loop linea_negra
+endm
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;Fin Macros;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -357,7 +370,9 @@ imprime_ui:
 	call DIBUJA_UI 			;procedimiento que dibuja marco de la interfaz de usuario
 	call DIBUJA_NEXT
 	call DIBUJA_ACTUAL
-	
+
+	call BORRA_PIEZA_ACTUAL
+
 	add [pieza_ren],6
 
 	call DIBUJA_ACTUAL
@@ -368,30 +383,6 @@ imprime_ui:
 ;Si el botón está suelto, continúa a la sección "mouse"
 ;si no, se mantiene indefinidamente en "mouse_no_clic" hasta que se suelte
 mouse_no_clic:
-	
-;;;;;;;;;;;;;;CONTROL DE TECLADO (SO FAR);;;;;;;;;;;;;;;
-teclado:
-	mov ah, 01h ;
-    int 16h
-    cmp ax,0
-    jnz no_key ; Si no se ha presionado una tecla
-	mov ah, 0  ; Se lee la tecla del teclado cuando el mouse no se presiona
-    int 16h 
-    cmp al,97 ; a checker (izquierda)
-    je keya 
-    cmp al,100 ; d checker (derecha)
-    je keyd
-    cmp al,115 ; s chechker (baja)
-    je keys
-    cmp al,113 ; q checker (Sale del programa)
-    je salir
-
-keya:
-	imprime_caracter_color 
-keys:
-keyd:
-
-no_key:
 	lee_mouse
 	test bx,0001h
 	jnz mouse_no_clic
@@ -459,6 +450,7 @@ salir:				;inicia etiqueta salir
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;PROCEDIMIENTOS;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 	DIBUJA_UI proc
 		;imprimir esquina superior izquierda del marco
 		posiciona_cursor 0,0
@@ -1028,7 +1020,14 @@ salir:				;inicia etiqueta salir
 	endp
 
 	BORRA_PIEZA_ACTUAL proc
-		;Implementar
+		mov [aux1],3
+		borrar_pieza_actual:
+			dibuja_linea_negra [pieza_ren]
+			inc [pieza_ren]
+			dec [aux1]
+			cmp [aux1],0
+			jnz borrar_pieza_actual
+		sub [pieza_ren],3
 		ret
 	endp
 
