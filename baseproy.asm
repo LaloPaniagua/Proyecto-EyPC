@@ -119,7 +119,7 @@ pausa			equ 	2
 ;////////////////////////////////////////////////////
 titulo 			db 		"TETRIS"
 finTitulo 		db 		""
-levelStr 		db 		"NIVEL"
+levelStr 		db 		"LEVEL"
 finLevelStr 	db 		""
 linesStr 		db 		"LINES"
 finLinesStr 	db 		""
@@ -355,6 +355,13 @@ imprime_ui:
 	oculta_cursor_teclado	;oculta cursor del mouse
 	apaga_cursor_parpadeo 	;Deshabilita parpadeo del cursor
 	call DIBUJA_UI 			;procedimiento que dibuja marco de la interfaz de usuario
+	call DIBUJA_NEXT
+	call DIBUJA_ACTUAL
+	
+	add [pieza_ren],6
+
+	call DIBUJA_ACTUAL
+
 	muestra_cursor_mouse 	;hace visible el cursor del mouse
 	posiciona_cursor_mouse 320d,16d	;establece la posición del mouse
 ;Revisar que el boton izquierdo del mouse no esté presionado
@@ -646,8 +653,6 @@ salir:				;inicia etiqueta salir
 	IMPRIME_DATOS_INICIALES proc
 		call DATOS_INICIALES 		;inicializa variables de juego
 		call IMPRIME_SCORES
-		call DIBUJA_NEXT
-		call DIBUJA_ACTUAL
 		;implementar
 		ret
 	endp
@@ -946,8 +951,8 @@ salir:				;inicia etiqueta salir
 	DIBUJA_ACTUAL proc
 		lea di,[pieza_cols]
 		lea si,[pieza_rens]
-		mov al,ini_columna
-		mov ah,ini_renglon
+		mov al,pieza_col
+		mov ah,pieza_ren
 		mov [col_aux],al
 		mov [ren_aux],ah
 		mov [pieza_col],al
