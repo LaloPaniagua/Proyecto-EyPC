@@ -410,29 +410,14 @@ keyi:
 keya: ; Desplazamiento a la izquierda
 	call MOVER_IZQ
 	jmp teclado
-keys:
-	cmp [x],23
-	je teclado 
-	; posiciona_cursor [x],[y]
-	; mov [flagBorrar],1
-	; call DIBUJA_CUADRO 
-	; inc [x]
-	; posiciona_cursor [x],[y]
-	; mov [flagBorrar],0
-	; call DIBUJA_CUADRO 
-
-	call BORRA_PIEZA
-	inc [pieza_ren]
-	posiciona_cursor [pieza_col],[pieza_ren]
-	call DIBUJA_ACTUAL
-
+keys:; Desplazamiento hacia abajo
+	call MOVER_ABAJO
 	jmp teclado
 keyd: ;Desplazamiento a la derecha
 	call MOVER_DER
 	jmp teclado
-
 keyj:
-	;call GIRO_DER
+	call GIRO_DER
 	; Giro horario
 	jmp teclado
 
@@ -1135,19 +1120,14 @@ salir:				;inicia etiqueta salir
 		
 	endp
 
-	CODEC_MATRIX_3x3 proc ; Realiza una codificación. Donde haya 1's en su matriz, crea una coordenada para di y si
-	verificaion:
-		lea di,[pieza_cols]
-		lea si,[pieza_rens]
-		mov al,[pieza_ren]  ; Horizontal X
-		mov ah,[pieza_col]  ; Veritcal Y
-		; AX = (X,Y) = (AH,AL) 
+	CODEC_MATRIX_3x3 proc ; Realiza una codificación. Donde haya 1's en su matriz, crea una coordenada en di y si
+
 	asig11:				; Si es 1, lo guarda en la pila, sigue verificando
 		cmp [cm_r1],1
-		jnz asig13
-		mov al, [pieza_col]
-		mov ah, [pieza_ren]
-		push ax
+		jnz asig12
+		mov al, [pieza_col]  
+		mov ah, [pieza_ren]  
+		push ax    ;AX = (AH,AL) = (X,Y)
 	asig12:
 		cmp [cm_r1+1],1
 		jnz asig13
@@ -1209,9 +1189,11 @@ salir:				;inicia etiqueta salir
 		add ah,2
 		push ax
 	coordenadas:	; Los bits que fueron 1 se reajustan como coordenadas para dibujar las figuras respectivas 
+		lea di,[pieza_cols]
+		lea si,[pieza_rens]
 		pop ax
-		mov [di], al  ; x
-		mov [si], ah   ; y
+		mov [di], al  ; y
+		mov [si], ah   ; x
 		pop ax
 		mov [di+1], al
 		mov [si+1], ah
@@ -1224,7 +1206,7 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 
-	ROT_MATRIX_HOR proc ;ah auxiliar 1, al auxiliar2
+	ROT_MATRIX_HORA proc ;ah auxiliar 1, al auxiliar2
 		mov ah, [cm_r1]
 		mov al, [cm_r3]
 		mov cm_r1,al
@@ -1285,10 +1267,25 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 
+	MOVER_ABAJO proc
+		call BORRA_PIEZA
+		lea di,[pieza_rens]
+		inc pieza_ren
+		mov CX, 4
+		loop_abj:
+		mov al,[di]
+		inc al
+		mov [di],al
+		inc di
+		loop loop_abj
+		call DIBUJA_PIEZA
+		ret
+	endp
+
 
 	GIRO_DER proc
 		call BORRA_PIEZA
-		call ROT_MATRIX_HOR
+		call ROT_MATRIX_HORA
 		call CODEC_MATRIX_3x3
 		call DIBUJA_PIEZA
 
