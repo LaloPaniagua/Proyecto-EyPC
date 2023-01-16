@@ -6,6 +6,7 @@ title "Proyecto: Tetris" ;codigo opcional. Descripcion breve del programa, el te
 	x db 6
 	y db  6
 	flagBorrar db 0
+	time db 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Definición de constantes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -346,6 +347,17 @@ delimita_mouse_h 	macro minimo,maximo
 	int 33h			;llama interrupcion 33h para manejo del mouse
 endm
 
+;Imprime una línea negra en el área de juego
+dibuja_linea_negra 	macro renglon
+	mov cx,30
+	linea_negra:
+		posiciona_cursor renglon,cl
+		mov dx,cx
+		imprime_caracter_color 254,cNegro,bgNegro
+		mov cx,dx
+		loop linea_negra
+endm
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;Fin Macros;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -376,8 +388,10 @@ imprime_ui:
 mouse_no_clic:
 ;;;;;;;;;;;;;;CONTROL DE TECLADO (SO FAR);;;;;;;;;;;;;;;
 teclado:
+	call GRAVEDAD
 	mov ah, 01h ; OJO TIENE QUE ESTAR EN MINUSCULAS PARA FUNCIONAR
     int 16h
+    jz teclado
 	mov ah, 0  ; Se lee la tecla del teclado cuando el mouse no se presiona
     int 16h 
     cmp al,97 ; a checker (izquierda)
@@ -1268,6 +1282,14 @@ salir:				;inicia etiqueta salir
 	endp
 
 	MOVER_IZQ proc
+		cmp pieza_cols,lim_izquierdo
+		je dejar_mover
+		cmp pieza_cols+1,lim_izquierdo
+		je dejar_mover
+		cmp pieza_cols+2,lim_izquierdo
+		je dejar_mover
+		cmp pieza_cols+3,lim_izquierdo
+		je dejar_mover
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		dec pieza_col
@@ -1283,6 +1305,14 @@ salir:				;inicia etiqueta salir
 	endp
 
 	MOVER_DER proc
+		cmp pieza_cols,lim_derecho
+		je dejar_mover
+		cmp pieza_cols+1,lim_derecho
+		je dejar_mover
+		cmp pieza_cols+2,lim_derecho
+		je dejar_mover
+		cmp pieza_cols+3,lim_derecho
+		je dejar_mover
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		inc pieza_col
@@ -1298,6 +1328,14 @@ salir:				;inicia etiqueta salir
 	endp
 
 	MOVER_ABAJO proc
+		cmp pieza_rens,lim_inferior
+		je dejar_mover
+		cmp pieza_rens+1,lim_inferior
+		je dejar_mover
+		cmp pieza_rens+2,lim_inferior
+		je dejar_mover
+		cmp pieza_rens+3,lim_inferior
+		je dejar_mover
 		call BORRA_PIEZA
 		lea di,[pieza_rens]
 		inc pieza_ren
@@ -1309,6 +1347,7 @@ salir:				;inicia etiqueta salir
 		inc di
 		loop loop_abj
 		call DIBUJA_PIEZA
+		dejar_mover:
 		ret
 	endp
 
@@ -1348,7 +1387,7 @@ salir:				;inicia etiqueta salir
 		call DIBUJA_PIEZA
 		ret
 	endp
-
+  
 	GIRO_LINEA proc
 	lea di, [pieza_cols] ;eje x
 	lea si, [pieza_rens] ;eje y
@@ -1456,6 +1495,18 @@ salir:				;inicia etiqueta salir
 		mov [di+3],ah
 		jmp salir_giro
 	salir_giro:
+		ret
+	endp
+	
+	GRAVEDAD proc
+		mov ah,2Ch
+		int 21h
+
+		cmp dh,[time]
+		je salto_gravedad
+		mov [time],dh
+		call MOVER_ABAJO
+		salto_gravedad:
 		ret
 	endp
 
