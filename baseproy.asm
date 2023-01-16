@@ -953,6 +953,8 @@ salir:				;inicia etiqueta salir
 	;di - apuntador al arreglo de columnas
 	
 	DIBUJA_PIEZA proc
+		lea di,[pieza_cols]
+		lea si,[pieza_rens]
 		mov cx,4
 	loop_dibuja_pieza:
 		push cx
