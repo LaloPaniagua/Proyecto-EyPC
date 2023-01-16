@@ -63,7 +63,7 @@ lim_izquierdo 	equ		1
 lim_derecho 	equ		30
 ;Valores de referencia para la posición inicial de la primera pieza
 ini_columna 	equ 	lim_derecho/2
-ini_renglon 	equ 	1
+ini_renglon 	equ 	2
 
 ;Valores para la posición de los controles e indicadores dentro del juego
 ;Next
@@ -136,6 +136,8 @@ hiscore 		dw 		0
 speed 			dw 		4
 next 			db 		?
 isNext			db		0 			;Bandera que determina si DIBUJA_PIEZA está dibujando una next o la actual.
+status_linea	db		1			;Bandera que indica en que posición está la linea
+aux_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
 
 ;Coordenadas de la posición de referencia para la pieza en el área de juego
 pieza_col		db 		ini_columna
@@ -149,7 +151,7 @@ cm_r1			db		0,0,0			; Current_matriz
 cm_r2			db		0,0,0
 cm_r3			db		0,0,0
 ;Valor de la pieza actual correspondiente a las constantes Piezas
-pieza_actual 	db 		linvertida
+pieza_actual 	db 		0
 ;Color de la pieza actual, correspondiente a los colores del carácter
 actual_color 	db 		0
 ;Coordenadas de los pixeles correspondientes a la pieza siguiente
@@ -786,7 +788,7 @@ salir:				;inicia etiqueta salir
 	;	mov [cm_r2+1],1  	; 1 1 1 1
 	;	mov [cm_r2+2],1		; 0 0 0 0
 	;	mov [cm_r2+3],1		; 0 0 0 0
-
+		mov status_linea,1
 
 		mov [pieza_color],cCyanClaro
 		mov al,[ren_aux]
@@ -1313,20 +1315,150 @@ salir:				;inicia etiqueta salir
 
 	GIRO_DER proc
 		call BORRA_PIEZA
+		cmp pieza_actual, 1 ; si es un cuadro
+		je fin_giro_der
+		cmp pieza_actual,0 ; Si es una linea
+		je girolinea_der
+		normal_der:
 		call ROT_MATRIX_HORA
 		call CODEC_MATRIX_3x3
+		jmp fin_giro_der
+		girolinea_der:
+		mov aux_giro,1
+		call GIRO_LINEA
+		fin_giro_der:
 		call DIBUJA_PIEZA
-
 		ret
 	endp
 
 	GIRO_IZQ proc
 		call BORRA_PIEZA
+		cmp pieza_actual, 1 ; si es un cuadro
+		je fin_giro_izq
+		cmp pieza_actual,0 ; Si es una linea
+		je girolinea_izq
+		normal_iz:
 		call ROT_MATRIX_ANTIHORA
 		call CODEC_MATRIX_3x3
+		jmp fin_giro_izq
+		girolinea_izq:
+		mov aux_giro,0
+		call GIRO_LINEA
+		fin_giro_izq:
 		call DIBUJA_PIEZA
 		ret
 	endp
+
+	GIRO_LINEA proc
+	lea di, [pieza_cols] ;eje x
+	lea si, [pieza_rens] ;eje y
+	mov al, pieza_ren
+	mov ah, pieza_col
+	cmp aux_giro, 0 ;Gira a la izquierda
+	je GIROS_IZQUIERDOS
+	jmp GIROS_DERECHOS
+	GIROS_IZQUIERDOS:
+	cmp status_linea,1
+	je GIRO_12
+	cmp status_linea,2
+	je GIRO_23
+	cmp status_linea,3
+	je GIRO_34
+	cmp status_linea,4
+	je GIRO_41
+	GIROS_DERECHOS:
+	cmp status_linea,1
+	je GIRO_14
+	cmp status_linea,2
+	je GIRO_21
+	cmp status_linea,3
+	je GIRO_32
+	cmp status_linea,4
+	je GIRO_43
+
+	GIRO_12:
+	inc ah
+	dec	al
+	mov status_linea,2
+	jmp Vertical
+
+	GIRO_23:
+	add al,2
+	dec ah
+	mov status_linea,3
+	jmp Horizontal
+
+	GIRO_34:
+	sub al,2
+	add ah,2
+	mov status_linea,4
+	jmp Vertical
+
+	GIRO_41:
+	inc al
+	sub ah,2
+	mov status_linea,1
+	jmp Horizontal
+
+	GIRO_14:
+	dec al
+	add ah,2
+	mov status_linea,4
+	jmp Vertical
+
+	GIRO_43:
+	add al,2
+	sub ah,2
+	mov status_linea,3
+	jmp Horizontal
+
+	GIRO_32:
+	sub al,2
+	inc ah
+	mov status_linea,2
+	jmp Vertical
+
+	GIRO_21:
+	inc al
+	dec ah
+	mov status_linea,1
+	jmp Horizontal
+
+
+	Horizontal:   ; AL = Y y AH =X
+		mov pieza_ren,al
+		mov pieza_col,ah	
+		mov [si],al
+		mov [di],ah
+		inc ah
+		mov [si+1],al
+		mov [di+1],ah
+		inc ah
+		mov [si+2],al
+		mov [di+2],ah
+		inc ah
+		mov [si+3],al
+		mov [di+3],ah
+		jmp salir_giro
+	Vertical:
+		mov pieza_ren,al
+		mov pieza_col,ah
+		mov [si],al
+		mov [di],ah
+		inc al
+		mov [si+1],al
+		mov [di+1],ah
+		inc al
+		mov [si+2],al
+		mov [di+2],ah
+		inc al
+		mov [si+3],al
+		mov [di+3],ah
+		jmp salir_giro
+	salir_giro:
+		ret
+	endp
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;FIN PROCEDIMIENTOS;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
