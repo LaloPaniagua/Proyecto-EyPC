@@ -421,7 +421,7 @@ keyd: ;Desplazamiento a la derecha
 	jmp teclado
 
 keyj:
-	call GIRO_DER
+	;call GIRO_DER
 	; Giro horario
 	jmp teclado
 
@@ -984,7 +984,7 @@ salir:				;inicia etiqueta salir
 		push si
 		push di
 		posiciona_cursor [si],[di]
-		imprime_caracter_color 254,0,0
+		imprime_caracter_color 253,0,0
 		pop di
 		pop si
 		pop cx
@@ -992,7 +992,6 @@ salir:				;inicia etiqueta salir
 		inc si
 		loop loop_borra_pieza
 		ret
-
 	endp
 
 	;DIBUJA_NEXT - se usa para imprimir la pieza siguiente en pantalla
@@ -1259,6 +1258,7 @@ salir:				;inicia etiqueta salir
 		inc di
 		loop loop_izq
 		call DIBUJA_PIEZA
+		ret
 	endp
 
 	MOVER_DER proc
@@ -1273,6 +1273,7 @@ salir:				;inicia etiqueta salir
 		inc di
 		loop loop_der
 		call DIBUJA_PIEZA
+		ret
 	endp
 
 
