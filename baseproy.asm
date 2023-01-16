@@ -6,6 +6,7 @@ title "Proyecto: Tetris" ;codigo opcional. Descripcion breve del programa, el te
 	x db 6
 	y db  6
 	flagBorrar db 0
+	time db 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Definición de constantes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -385,8 +386,10 @@ imprime_ui:
 mouse_no_clic:
 ;;;;;;;;;;;;;;CONTROL DE TECLADO (SO FAR);;;;;;;;;;;;;;;
 teclado:
+	call GRAVEDAD
 	mov ah, 01h ; OJO TIENE QUE ESTAR EN MINUSCULAS PARA FUNCIONAR
     int 16h
+    jz teclado
 	mov ah, 0  ; Se lee la tecla del teclado cuando el mouse no se presiona
     int 16h 
     cmp al,97 ; a checker (izquierda)
@@ -1336,6 +1339,18 @@ salir:				;inicia etiqueta salir
 		call ROT_MATRIX_ANTIHORA
 		call CODEC_MATRIX_3x3
 		call DIBUJA_PIEZA
+		ret
+	endp
+	
+	GRAVEDAD proc
+		mov ah,2Ch
+		int 21h
+
+		cmp dh,[time]
+		je salto_gravedad
+		mov [time],dh
+		call MOVER_ABAJO
+		salto_gravedad:
 		ret
 	endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
