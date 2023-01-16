@@ -135,7 +135,7 @@ blank			db 		"     "
 lines_score 	dw 		0
 hiscore 		dw 		0
 speed 			dw 		4
-next 			db 		lnormal
+next 			db 		?
 isNext			db		0 			;Bandera que determina si DIBUJA_PIEZA está dibujando una next o la actual.
 status_linea	db		1			;Bandera que indica en que posición está la linea
 aux_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
@@ -1542,16 +1542,13 @@ salir:				;inicia etiqueta salir
 	endp
 	
 	GENERAR_PIEZA_NEXT proc
-		mov ah, 00h      
-   		int 1AH    
-   		mov  ax, dx
-   		xor  dx, dx
-   		mov  cx, 7    
-   		div  cx
-		mov dh,[next]
-		mov [pieza_actual],dh
-		mov [next],dl
-		ret
+		mov ah, 02h      
+   		int 1Ah
+		mov cl, 7d
+		mov al,dh
+		div cl
+		mov [next],ah
+		ret 
 	endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
