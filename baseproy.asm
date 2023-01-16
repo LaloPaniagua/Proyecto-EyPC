@@ -135,6 +135,7 @@ lines_score 	dw 		0
 hiscore 		dw 		0
 speed 			dw 		4
 next 			db 		?
+isNext			db		0 			;Bandera que determina si DIBUJA_PIEZA está dibujando una next o la actual.
 
 ;Coordenadas de la posición de referencia para la pieza en el área de juego
 pieza_col		db 		ini_columna
@@ -957,6 +958,8 @@ salir:				;inicia etiqueta salir
 	;di - apuntador al arreglo de columnas
 	
 	DIBUJA_PIEZA proc
+		cmp isNext,1
+		je is_next
 		lea di,[pieza_cols]
 		lea si,[pieza_rens]
 		mov cx,4
@@ -973,6 +976,12 @@ salir:				;inicia etiqueta salir
 		inc si
 		loop loop_dibuja_pieza
 		ret
+	is_next:
+	lea di,[next_cols]
+	lea si,[next_rens]
+	mov cx,4
+	jmp loop_dibuja_pieza
+
 	endp
 	
    BORRA_PIEZA proc
@@ -998,6 +1007,7 @@ salir:				;inicia etiqueta salir
 	;Primero se debe calcular qué pieza se va a dibujar
 	;Dentro del procedimiento se utilizan variables referentes a la pieza siguiente
 	DIBUJA_NEXT proc
+		mov isNext,1
 		lea di,[next_cols]
 		lea si,[next_rens]
 		mov [col_aux],next_col+10
@@ -1059,6 +1069,7 @@ salir:				;inicia etiqueta salir
 	;Primero se debe calcular qué pieza se va a dibujar
 	;Dentro del procedimiento se utilizan variables referentes a la pieza actual
 	DIBUJA_ACTUAL proc
+		mov isNext,0
 		lea di,[pieza_cols] ; di es para x
 		lea si,[pieza_rens] ; si para y
 		mov al,pieza_col
