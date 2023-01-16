@@ -147,6 +147,9 @@ pieza_ren		db 		ini_renglon
 ;El arreglo cols guarda las columnas, y rens los renglones
 pieza_cols 		db 		0,0,0,0
 pieza_rens 		db 		0,0,0,0
+;Coordenadas para el bloque negro
+bn_cols        	db		0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3
+bn_rens         db      1,1,1,1,2,2,2,2,3,3,3,3,0,0,0,0
 ;Matrix de figura (Muestra el estado actual de la figura en una matriz binaria
 cm_r1			db		0,0,0			; Current_matriz
 cm_r2			db		0,0,0
@@ -173,6 +176,7 @@ pieza_color 	db 		0
 ;Variables auxiliares de uso general
 aux1	 		db 		0
 aux2 			db 		0
+aux3			db		0
 
 ;Variables auxiliares para el manejo de posiciones
 col_aux 		db 		0
@@ -357,6 +361,8 @@ dibuja_linea_negra 	macro renglon
 		mov cx,dx
 		loop linea_negra
 endm
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;Fin Macros;;;;;;;
@@ -832,7 +838,7 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de L
 	DIBUJA_L proc
-		mov [cm_r2],1		; 0	0 0
+		mov [cm_r2],1		; 0 0 0
 		mov [cm_r2+1],1	  	; 1 1 1 
 		mov [cm_r2+2],1		; 1 0 0
 		mov [cm_r3],1		
@@ -1284,7 +1290,21 @@ salir:				;inicia etiqueta salir
 	endp
 
 	BORRA_NEXT proc
-		;implementar
+		lea di,[next_cols]
+		lea si,[next_rens]
+		mov cx,4
+	loop_borra_next:
+		push cx
+		push si
+		push di
+		posiciona_cursor [si],[di]
+		imprime_caracter_color 253,0,0
+		pop di
+		pop si
+		pop cx
+		inc di
+		inc si
+		loop loop_borra_next
 		ret
 	endp
 
@@ -1331,18 +1351,19 @@ salir:				;inicia etiqueta salir
 		inc di
 		loop loop_der
 		call DIBUJA_PIEZA
+		dejar_mover:
 		ret
 	endp
 
 	MOVER_ABAJO proc
 		cmp pieza_rens,lim_inferior
-		je dejar_mover
+		je cambiar_pieza
 		cmp pieza_rens+1,lim_inferior
-		je dejar_mover
+		je cambiar_pieza
 		cmp pieza_rens+2,lim_inferior
-		je dejar_mover
+		je cambiar_pieza
 		cmp pieza_rens+3,lim_inferior
-		je dejar_mover
+		je cambiar_pieza
 		call BORRA_PIEZA
 		lea di,[pieza_rens]
 		inc pieza_ren
@@ -1354,7 +1375,15 @@ salir:				;inicia etiqueta salir
 		inc di
 		loop loop_abj
 		call DIBUJA_PIEZA
-		dejar_mover:
+		jmp dejar_mover
+		
+		cambiar_pieza:
+		mov [pieza_ren],ini_renglon
+		mov [pieza_col],ini_columna
+		call GENERAR_PIEZA_NEXT
+		call BORRA_NEXT
+		call DIBUJA_NEXT
+		call DIBUJA_ACTUAL
 		ret
 	endp
 
@@ -1547,6 +1576,8 @@ salir:				;inicia etiqueta salir
 		mov cl, 7d
 		mov al,dh
 		div cl
+		mov cl,[next]
+		mov [pieza_actual],cl
 		mov [next],ah
 		ret 
 	endp
