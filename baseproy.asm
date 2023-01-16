@@ -387,8 +387,10 @@ teclado:
     je salir
     cmp al,105
     je keyi
-	cmp al, 106 ; j chequer  (rota a la derecha)
+	cmp al, 106 ; j checker  (rota a la derecha)
 	je keyj
+	cmp al,102  ; f checker (rota a la izquierda 
+	je keyf
     cmp al,120 ;x Dummy key (Para utilizar el mouse primero se tiene que dar x
     			; antes de cada click)
    	je mouse
@@ -407,7 +409,9 @@ keyd: ;Desplazamiento a la derecha
 	jmp teclado
 keyj:
 	call GIRO_DER
-	; Giro horario
+	jmp teclado
+keyf:
+	call GIRO_IZQ
 	jmp teclado
 
 
@@ -1218,6 +1222,28 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 
+	ROT_MATRIX_ANTIHORA proc
+		mov ah, [cm_r1]
+		mov al, [cm_r1+2]
+		mov cm_r1,al
+		mov al, [cm_r3+2]
+		mov [cm_r1+2],al
+		mov al, [cm_r3]
+		mov [cm_r3+2],al
+		mov [cm_r3],ah
+
+		mov ah, [cm_r1+1]
+		mov al, [cm_r2+2]
+		mov [cm_r1+1],al
+		mov al, [cm_r3+1]
+		mov [cm_r2+2],al
+		mov al, [cm_r2]
+		mov [cm_r3+1],al
+		mov [cm_r2],ah
+		ret
+	endp
+
+
 	BORRA_PIEZA_ACTUAL proc
 		;Implementar
 		ret
@@ -1284,7 +1310,10 @@ salir:				;inicia etiqueta salir
 	endp
 
 	GIRO_IZQ proc
-		;implementar
+		call BORRA_PIEZA
+		call ROT_MATRIX_ANTIHORA
+		call CODEC_MATRIX_3x3
+		call DIBUJA_PIEZA
 		ret
 	endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
