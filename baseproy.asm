@@ -1290,33 +1290,35 @@ salir:				;inicia etiqueta salir
 	endp
 
 	BORRA_NEXT proc
-		lea di,[next_cols]
-		lea si,[next_rens]
-		mov cx,4
-	loop_borra_next:
-		push cx
-		push si
-		push di
-		posiciona_cursor [si],[di]
-		imprime_caracter_color 253,0,0
-		pop di
-		pop si
-		pop cx
-		inc di
-		inc si
-		loop loop_borra_next
+		BORRA_NEXT proc
+		posiciona_cursor 4,47
+		imprime_caracter_color 254,0,0
+		posiciona_cursor 4,48
+		imprime_caracter_color 254,0,0
+		posiciona_cursor 4,49
+		imprime_caracter_color 254,0,0
+		posiciona_cursor 4,50
+		imprime_caracter_color 254,0,0
+		posiciona_cursor 5,47
+		imprime_caracter_color 254,0,0
+		posiciona_cursor 5,48
+		imprime_caracter_color 254,0,0
+		posiciona_cursor 5,49
+		imprime_caracter_color 254,0,0
+		posiciona_cursor 5,50
+		imprime_caracter_color 254,0,0
 		ret
 	endp
 
 	MOVER_IZQ proc
 		cmp pieza_cols,lim_izquierdo
-		je dejar_mover
+		je dejar_mover_izq
 		cmp pieza_cols+1,lim_izquierdo
-		je dejar_mover
+		je dejar_mover_izq
 		cmp pieza_cols+2,lim_izquierdo
-		je dejar_mover
+		je dejar_mover_izq
 		cmp pieza_cols+3,lim_izquierdo
-		je dejar_mover
+		je dejar_mover_izq
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		dec pieza_col
@@ -1328,18 +1330,19 @@ salir:				;inicia etiqueta salir
 		inc di
 		loop loop_izq
 		call DIBUJA_PIEZA
+		dejar_mover_izq:
 		ret
 	endp
 
 	MOVER_DER proc
 		cmp pieza_cols,lim_derecho
-		je dejar_mover
+		je dejar_mover_der
 		cmp pieza_cols+1,lim_derecho
-		je dejar_mover
+		je dejar_mover_der
 		cmp pieza_cols+2,lim_derecho
-		je dejar_mover
+		je dejar_mover_der
 		cmp pieza_cols+3,lim_derecho
-		je dejar_mover
+		je dejar_mover_der
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		inc pieza_col
@@ -1351,19 +1354,19 @@ salir:				;inicia etiqueta salir
 		inc di
 		loop loop_der
 		call DIBUJA_PIEZA
-		dejar_mover:
+		dejar_mover_der:
 		ret
 	endp
 
 	MOVER_ABAJO proc
 		cmp pieza_rens,lim_inferior
-		je cambiar_pieza
+		je dejar_mover
 		cmp pieza_rens+1,lim_inferior
-		je cambiar_pieza
+		je dejar_mover
 		cmp pieza_rens+2,lim_inferior
-		je cambiar_pieza
+		je dejar_mover
 		cmp pieza_rens+3,lim_inferior
-		je cambiar_pieza
+		je dejar_mover
 		call BORRA_PIEZA
 		lea di,[pieza_rens]
 		inc pieza_ren
@@ -1374,16 +1377,20 @@ salir:				;inicia etiqueta salir
 		mov [di],al
 		inc di
 		loop loop_abj
-		call DIBUJA_PIEZA
-		jmp dejar_mover
-		
-		cambiar_pieza:
-		mov [pieza_ren],ini_renglon
-		mov [pieza_col],ini_columna
+		call DIBUJA_ACTUAL
+		ret
+		dejar_mover:
+		call RESET_PROC
+		ret
+	endp
+
+	RESET_PROC proc
+		mov pieza_ren,ini_renglon
+		mov pieza_col,15
 		call GENERAR_PIEZA_NEXT
+		call DIBUJA_ACTUAL
 		call BORRA_NEXT
 		call DIBUJA_NEXT
-		call DIBUJA_ACTUAL
 		ret
 	endp
 
