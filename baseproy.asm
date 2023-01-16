@@ -1087,6 +1087,8 @@ salir:				;inicia etiqueta salir
 	;Primero se debe calcular qué pieza se va a dibujar
 	;Dentro del procedimiento se utilizan variables referentes a la pieza actual
 	DIBUJA_ACTUAL proc
+		mov pieza_ren,ini_renglon
+		mov pieza_col,15
 		mov isNext,0
 		lea di,[pieza_cols] ; di es para x
 		lea si,[pieza_rens] ; si para y
@@ -1156,7 +1158,7 @@ salir:				;inicia etiqueta salir
 	endp
 
 	CODEC_MATRIX_3x3 proc ; Realiza una codificación. Donde haya 1's en su matriz, crea una coordenada en di y si
-
+	xor ax,ax
 	asig11:				; Si es 1, lo guarda en la pila, sigue verificando
 		cmp [cm_r1],1
 		jnz asig12
@@ -1238,6 +1240,7 @@ salir:				;inicia etiqueta salir
 		pop ax
 		mov [di+3], al
 		mov [si+3], ah
+		
 		ret
 	endp
 
@@ -1359,14 +1362,15 @@ salir:				;inicia etiqueta salir
 	endp
 
 	MOVER_ABAJO proc
-		cmp pieza_rens,lim_inferior
+		cmp [pieza_rens],lim_inferior
 		je dejar_mover
-		cmp pieza_rens+1,lim_inferior
+		cmp [pieza_rens+1],lim_inferior
 		je dejar_mover
-		cmp pieza_rens+2,lim_inferior
+		cmp [pieza_rens+2],lim_inferior
 		je dejar_mover
-		cmp pieza_rens+3,lim_inferior
+		cmp [pieza_rens+3],lim_inferior
 		je dejar_mover
+
 		call BORRA_PIEZA
 		lea di,[pieza_rens]
 		inc pieza_ren
@@ -1377,7 +1381,7 @@ salir:				;inicia etiqueta salir
 		mov [di],al
 		inc di
 		loop loop_abj
-		call DIBUJA_ACTUAL
+		call DIBUJA_PIEZA
 		ret
 		dejar_mover:
 		call RESET_PROC
@@ -1390,6 +1394,7 @@ salir:				;inicia etiqueta salir
 		call GENERAR_PIEZA_NEXT
 		call BORRA_NEXT
 		call DIBUJA_NEXT
+		;call CLEAN_CURRENT_MATRIX
 		call DIBUJA_ACTUAL
 		ret
 	endp
