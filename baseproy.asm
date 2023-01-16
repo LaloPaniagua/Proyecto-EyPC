@@ -152,7 +152,7 @@ cm_r1			db		0,0,0			; Current_matriz
 cm_r2			db		0,0,0
 cm_r3			db		0,0,0
 ;Valor de la pieza actual correspondiente a las constantes Piezas
-pieza_actual 	db 		cuadro
+pieza_actual 	db 		tnormal
 ;Color de la pieza actual, correspondiente a los colores del carácter
 actual_color 	db 		0
 ;Coordenadas de los pixeles correspondientes a la pieza siguiente
@@ -378,8 +378,7 @@ imprime_ui:
 	oculta_cursor_teclado	;oculta cursor del mouse
 	apaga_cursor_parpadeo 	;Deshabilita parpadeo del cursor
 	call DIBUJA_UI 			;procedimiento que dibuja marco de la interfaz de usuario
-	;call GENERAR_PIEZA_NEXT
-	call GENERAR_PRIMER_PIEZA
+	call GENERAR_PIEZA_NEXT
 	;mov pieza_actual,4
 	call DIBUJA_NEXT
 	call DIBUJA_ACTUAL
@@ -1543,25 +1542,15 @@ salir:				;inicia etiqueta salir
 	endp
 	
 	GENERAR_PIEZA_NEXT proc
-		mov ah, 00h      
-   		int 1AH    
-   		mov  ax, dx
-   		xor  dx, dx
-   		mov  cx, 7    
-   		div  cx
-		mov [next],dl
-		ret
-	endp
-
-	GENERAR_PRIMER_PIEZA proc
 		mov ah, 02h      
    		int 1Ah
 		mov cl, 7d
 		mov al,dh
 		div cl
-		mov [pieza_actual],ah
+		mov [next],ah
 		ret 
 	endp
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;FIN PROCEDIMIENTOS;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
