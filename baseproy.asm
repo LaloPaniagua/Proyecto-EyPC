@@ -378,8 +378,9 @@ imprime_ui:
 	oculta_cursor_teclado	;oculta cursor del mouse
 	apaga_cursor_parpadeo 	;Deshabilita parpadeo del cursor
 	call DIBUJA_UI 			;procedimiento que dibuja marco de la interfaz de usuario
-	call GENERAR_PIEZA_NEXT
+	;call GENERAR_PIEZA_NEXT
 	call GENERAR_PRIMER_PIEZA
+	;mov pieza_actual,4
 	call DIBUJA_NEXT
 	call DIBUJA_ACTUAL
 	muestra_cursor_mouse 	;hace visible el cursor del mouse
