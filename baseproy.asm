@@ -343,6 +343,17 @@ delimita_mouse_h 	macro minimo,maximo
 	int 33h			;llama interrupcion 33h para manejo del mouse
 endm
 
+;Imprime una línea negra en el área de juego
+dibuja_linea_negra 	macro renglon
+	mov cx,30
+	linea_negra:
+		posiciona_cursor renglon,cl
+		mov dx,cx
+		imprime_caracter_color 254,cNegro,bgNegro
+		mov cx,dx
+		loop linea_negra
+endm
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;Fin Macros;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
