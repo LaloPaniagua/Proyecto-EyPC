@@ -1388,9 +1388,9 @@ salir:				;inicia etiqueta salir
 		mov pieza_ren,ini_renglon
 		mov pieza_col,15
 		call GENERAR_PIEZA_NEXT
-		call DIBUJA_ACTUAL
 		call BORRA_NEXT
 		call DIBUJA_NEXT
+		call DIBUJA_ACTUAL
 		ret
 	endp
 
