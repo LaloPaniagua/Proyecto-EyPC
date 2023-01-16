@@ -377,6 +377,7 @@ imprime_ui:
 	clear 					;limpia pantalla
 	oculta_cursor_teclado	;oculta cursor del mouse
 	apaga_cursor_parpadeo 	;Deshabilita parpadeo del cursor
+	call GENERAR_PIEZA
 	call DIBUJA_UI 			;procedimiento que dibuja marco de la interfaz de usuario
 	call DIBUJA_NEXT
 	call DIBUJA_ACTUAL
@@ -1509,7 +1510,19 @@ salir:				;inicia etiqueta salir
 		salto_gravedad:
 		ret
 	endp
-
+	
+	GENERAR_PIEZA proc
+		mov ah, 00h      
+   		int 1AH    
+   		mov  ax, dx
+   		xor  dx, dx
+   		mov  cx, 7    
+   		div  cx
+		mov dh,[next]
+		mov [pieza_actual],dh
+		mov [next],dl
+		ret
+	endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;FIN PROCEDIMIENTOS;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
