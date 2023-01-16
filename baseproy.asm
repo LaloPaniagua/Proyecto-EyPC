@@ -379,6 +379,7 @@ imprime_ui:
 	apaga_cursor_parpadeo 	;Deshabilita parpadeo del cursor
 	call DIBUJA_UI 			;procedimiento que dibuja marco de la interfaz de usuario
 	call GENERAR_PIEZA_NEXT
+	call GENERAR_PRIMER_PIEZA
 	call DIBUJA_NEXT
 	call DIBUJA_ACTUAL
 	muestra_cursor_mouse 	;hace visible el cursor del mouse
@@ -1547,10 +1548,18 @@ salir:				;inicia etiqueta salir
    		xor  dx, dx
    		mov  cx, 7    
    		div  cx
-		mov dh,[next]
-		mov [pieza_actual],dh
 		mov [next],dl
 		ret
+	endp
+
+	GENERAR_PRIMER_PIEZA proc
+		mov ah, 02h      
+   		int 1Ah
+		mov cl, 7d
+		mov al,dh
+		div cl
+		mov [pieza_actual],ah
+		ret 
 	endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;FIN PROCEDIMIENTOS;;;;;;
