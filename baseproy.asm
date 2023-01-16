@@ -152,7 +152,7 @@ cm_r1			db		0,0,0			; Current_matriz
 cm_r2			db		0,0,0
 cm_r3			db		0,0,0
 ;Valor de la pieza actual correspondiente a las constantes Piezas
-pieza_actual 	db 		0
+pieza_actual 	db 		cuadro
 ;Color de la pieza actual, correspondiente a los colores del carácter
 actual_color 	db 		0
 ;Coordenadas de los pixeles correspondientes a la pieza siguiente
@@ -161,7 +161,7 @@ next_rens 		db 		0,0,0,0
 ;Color de la pieza siguiente, correspondiente con los colores del carácter
 next_color 		db 		0
 ;Valor de la pieza siguiente correspondiente a Piezas
-pieza_next 		db 		linea
+pieza_next 		db 		cuadro
 ;A continuación se tienen algunas variables auxiliares
 ;Variables min y max para almacenar los extremos izquierdo, derecho, inferior y superior, para detectar colisiones
 pieza_col_max 	db 		0
@@ -377,8 +377,8 @@ imprime_ui:
 	clear 					;limpia pantalla
 	oculta_cursor_teclado	;oculta cursor del mouse
 	apaga_cursor_parpadeo 	;Deshabilita parpadeo del cursor
-	call GENERAR_PIEZA
 	call DIBUJA_UI 			;procedimiento que dibuja marco de la interfaz de usuario
+	;call GENERAR_PIEZA_NEXT
 	call DIBUJA_NEXT
 	call DIBUJA_ACTUAL
 	muestra_cursor_mouse 	;hace visible el cursor del mouse
@@ -409,6 +409,8 @@ teclado:
 	je keyj
 	cmp al,102  ; f checker (rota a la izquierda 
 	je keyf
+	cmp al,119 ; w checker (SUBE SOLO PARA PRUEBAS)
+	je keyw
     cmp al,120 ;x Dummy key (Para utilizar el mouse primero se tiene que dar x
     			; antes de cada click)
    	je mouse
@@ -430,6 +432,9 @@ keyj:
 	jmp teclado
 keyf:
 	call GIRO_IZQ
+	jmp teclado
+keyw:
+	call MOVER_ARRIBA
 	jmp teclado
 
 
@@ -778,8 +783,8 @@ salir:				;inicia etiqueta salir
 	DIBUJA_CUADRO proc
 	
 		mov [pieza_color],cAmarillo
-		mov al,[x]
-		mov ah,[y]
+		mov al,[ren_aux]
+		mov ah,[col_aux]
 		inc al
 		inc ah
 		mov [si],al
@@ -1352,6 +1357,30 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 
+	MOVER_ARRIBA proc
+		cmp pieza_rens,lim_superior
+		je dejar_mover
+		cmp pieza_rens+1,lim_superior
+		je dejar_mover
+		cmp pieza_rens+2,lim_superior
+		je dejar_mover
+		cmp pieza_rens+3,lim_superior
+		je dejar_mover
+
+		call BORRA_PIEZA
+		lea di,[pieza_rens]
+		dec pieza_ren
+		mov CX, 4
+		loop_arb:
+		mov al,[di]
+		dec al
+		mov [di],al
+		inc di
+		loop loop_arb
+		call DIBUJA_PIEZA
+		ret
+	endp
+
 
 	GIRO_DER proc
 		call BORRA_PIEZA
@@ -1511,15 +1540,20 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 	
-	GENERAR_PIEZA proc
-		mov ah, 00h      
-   		int 1AH    
-   		mov  ax, dx
-   		xor  dx, dx
+	GENERAR_PIEZA_NEXT proc
+		mov ah, 02h      
+   		int 1AH   		;obtiene las horas minutos y segundos
+		;ch:cl:dh =  hh:mm:Ss
+
+		;Movimientos para generar un numero aleatorio
+		mov al,ch
+		mul ch
+		mov dl,dh
+		xor dh,dh
+		add ax,dx
+
    		mov  cx, 7    
    		div  cx
-		mov dh,[next]
-		mov [pieza_actual],dh
 		mov [next],dl
 		ret
 	endp
