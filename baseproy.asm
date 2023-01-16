@@ -378,7 +378,7 @@ imprime_ui:
 	oculta_cursor_teclado	;oculta cursor del mouse
 	apaga_cursor_parpadeo 	;Deshabilita parpadeo del cursor
 	call DIBUJA_UI 			;procedimiento que dibuja marco de la interfaz de usuario
-	;call GENERAR_PIEZA_NEXT
+	call GENERAR_PIEZA_NEXT
 	call DIBUJA_NEXT
 	call DIBUJA_ACTUAL
 	muestra_cursor_mouse 	;hace visible el cursor del mouse
@@ -1541,19 +1541,14 @@ salir:				;inicia etiqueta salir
 	endp
 	
 	GENERAR_PIEZA_NEXT proc
-		mov ah, 02h      
-   		int 1AH   		;obtiene las horas minutos y segundos
-		;ch:cl:dh =  hh:mm:Ss
-
-		;Movimientos para generar un numero aleatorio
-		mov al,ch
-		mul ch
-		mov dl,dh
-		xor dh,dh
-		add ax,dx
-
+		mov ah, 00h      
+   		int 1AH    
+   		mov  ax, dx
+   		xor  dx, dx
    		mov  cx, 7    
    		div  cx
+		mov dh,[next]
+		mov [pieza_actual],dh
 		mov [next],dl
 		ret
 	endp
