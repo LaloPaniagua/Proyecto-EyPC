@@ -1280,6 +1280,14 @@ salir:				;inicia etiqueta salir
 	endp
 
 	MOVER_IZQ proc
+		cmp pieza_cols,lim_izquierdo
+		je dejar_mover
+		cmp pieza_cols+1,lim_izquierdo
+		je dejar_mover
+		cmp pieza_cols+2,lim_izquierdo
+		je dejar_mover
+		cmp pieza_cols+3,lim_izquierdo
+		je dejar_mover
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		dec pieza_col
@@ -1295,6 +1303,14 @@ salir:				;inicia etiqueta salir
 	endp
 
 	MOVER_DER proc
+		cmp pieza_cols,lim_derecho
+		je dejar_mover
+		cmp pieza_cols+1,lim_derecho
+		je dejar_mover
+		cmp pieza_cols+2,lim_derecho
+		je dejar_mover
+		cmp pieza_cols+3,lim_derecho
+		je dejar_mover
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		inc pieza_col
@@ -1310,6 +1326,14 @@ salir:				;inicia etiqueta salir
 	endp
 
 	MOVER_ABAJO proc
+		cmp pieza_rens,lim_inferior
+		je dejar_mover
+		cmp pieza_rens+1,lim_inferior
+		je dejar_mover
+		cmp pieza_rens+2,lim_inferior
+		je dejar_mover
+		cmp pieza_rens+3,lim_inferior
+		je dejar_mover
 		call BORRA_PIEZA
 		lea di,[pieza_rens]
 		inc pieza_ren
@@ -1321,6 +1345,7 @@ salir:				;inicia etiqueta salir
 		inc di
 		loop loop_abj
 		call DIBUJA_PIEZA
+		dejar_mover:
 		ret
 	endp
 
