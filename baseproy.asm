@@ -947,6 +947,7 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de S invertida
 	DIBUJA_S_INVERTIDA proc
+		;call CLEAN_CURRENT_MATRIX
 		mov [cm_r2],1		; 0 1 1 
 		mov [cm_r2+1],1  	; 1 1 0 
 		mov [cm_r3+1],1		; 1 0 1 
@@ -1092,9 +1093,10 @@ salir:				;inicia etiqueta salir
 	;Primero se debe calcular qué pieza se va a dibujar
 	;Dentro del procedimiento se utilizan variables referentes a la pieza actual
 	DIBUJA_ACTUAL proc
-		mov pieza_ren,ini_renglon
-		mov pieza_col,15
 		mov isNext,0
+		call CLEAN_CURRENT_MATRIX
+		mov pieza_ren,ini_renglon
+		mov pieza_col,ini_columna
 		lea di,[pieza_cols] ; di es para x
 		lea si,[pieza_rens] ; si para y
 		mov al,pieza_col
@@ -1150,16 +1152,28 @@ salir:				;inicia etiqueta salir
 	endp
 
 	CLEAN_CURRENT_MATRIX proc 	;Limpia la matriz binaria 3x3 que se usa para las piezas
-		mov [cm_r1],0
-		mov [cm_r1+1],0
-		mov [cm_r1+2],0
-		mov [cm_r2],0
-		mov [cm_r2+1],0
-		mov [cm_r2+2],0
-		mov [cm_r3],0
-		mov [cm_r3+1],0
-		mov [cm_r3+2],0
-		
+		mov cx,3
+		xor ax,ax
+		lea di,[cm_r1]
+		clean_r1:
+		mov [di],al
+		inc di
+		loop clean_r1
+
+		mov cx,3
+		lea di,[cm_r2]
+		clean_r2:
+		mov [di],al
+		inc di
+		loop clean_r2
+
+		mov cx,3
+		lea di,[cm_r3]
+		clean_r3:
+		mov [di],al
+		inc di
+		loop clean_r3
+		ret
 	endp
 
 	CODEC_MATRIX_3x3 proc ; Realiza una codificación. Donde haya 1's en su matriz, crea una coordenada en di y si
@@ -1420,9 +1434,10 @@ salir:				;inicia etiqueta salir
 
 	RESET_PROC proc
 		mov pieza_ren,ini_renglon
-		mov pieza_col,15
+		mov pieza_col,ini_columna
 		call GENERAR_PIEZA_NEXT
 		call BORRA_NEXT
+		;call CLEAN_CURRENT_MATRIX
 		call DIBUJA_NEXT
 		;call CLEAN_CURRENT_MATRIX
 		call DIBUJA_ACTUAL
