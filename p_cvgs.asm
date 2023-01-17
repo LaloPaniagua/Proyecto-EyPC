@@ -139,7 +139,6 @@ next 			db 		?
 isNext			db		0 			;Bandera que determina si DIBUJA_PIEZA está dibujando una next o la actual.
 status_linea	db		1			;Bandera que indica en que posición está la linea
 aux_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
-col_det			db		0			;Indica si se ha detectado una colisión
 
 ;Coordenadas de la posición de referencia para la pieza en el área de juego
 pieza_col		db 		ini_columna
@@ -947,9 +946,9 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de S invertida
 	DIBUJA_S_INVERTIDA proc
-		mov [cm_r2],1		; 0 1 1 
+		mov [cm_r2],1		; 0 0 0 
 		mov [cm_r2+1],1  	; 1 1 0 
-		mov [cm_r3+1],1		; 1 0 1 
+		mov [cm_r3+1],1		; 0 1 1 
 		mov [cm_r3+2],1		
 
 		mov [pieza_color],cRojoClaro
@@ -1004,8 +1003,6 @@ salir:				;inicia etiqueta salir
 	endp
 	
    BORRA_PIEZA proc
-		cmp col_det,01H
-		je salir_borrar
 		lea di,[pieza_cols]
 		lea si,[pieza_rens]
 		mov cx,4
@@ -1014,15 +1011,13 @@ salir:				;inicia etiqueta salir
 		push si
 		push di
 		posiciona_cursor [si],[di]
-		imprime_caracter_color 32,0,0
+		imprime_caracter_color 253,0,0
 		pop di
 		pop si
 		pop cx
 		inc di
 		inc si
 		loop loop_borra_pieza
-		salir_borrar:
-		mov col_det,00H
 		ret
 	endp
 
@@ -1298,6 +1293,7 @@ salir:				;inicia etiqueta salir
 	endp
 
 	BORRA_NEXT proc
+		BORRA_NEXT proc
 		posiciona_cursor 4,47
 		imprime_caracter_color 254,0,0
 		posiciona_cursor 4,48
@@ -1326,7 +1322,6 @@ salir:				;inicia etiqueta salir
 		je dejar_mover_izq
 		cmp pieza_cols+3,lim_izquierdo
 		je dejar_mover_izq
-		
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		dec pieza_col
@@ -1337,15 +1332,7 @@ salir:				;inicia etiqueta salir
 		mov [di],al
 		inc di
 		loop loop_izq
-		;;;DETECTA COLISIÓN;;;;;;
-		call DETECTAR_COLISION
-		cmp col_det,01H
-		je cancelar_movimiento_i
-		;;;;;;;;;;;;;;;;;;
 		call DIBUJA_PIEZA
-		ret
-		cancelar_movimiento_i:
-		call MOVER_DER
 		dejar_mover_izq:
 		ret
 	endp
@@ -1359,7 +1346,6 @@ salir:				;inicia etiqueta salir
 		je dejar_mover_der
 		cmp pieza_cols+3,lim_derecho
 		je dejar_mover_der
-
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		inc pieza_col
@@ -1370,15 +1356,7 @@ salir:				;inicia etiqueta salir
 		mov [di],al
 		inc di
 		loop loop_der
-		;;;DETECTA COLISIÓN;;;;;;
-		call DETECTAR_COLISION
-		cmp col_det,01H
-		je cancelar_movimiento_d
-		;;;;;;;;;;;;;;;;;;
 		call DIBUJA_PIEZA
-		ret
-		cancelar_movimiento_d:
-		call MOVER_IZQ
 		dejar_mover_der:
 		ret
 	endp
@@ -1403,16 +1381,8 @@ salir:				;inicia etiqueta salir
 		mov [di],al
 		inc di
 		loop loop_abj
-		;;;DETECTA COLISIÓN;;;;;;
-		call DETECTAR_COLISION
-		cmp col_det,01H
-		je cancelar_movimiento_ab
-		;;;;;;;;;;;;;;;;;;
-
 		call DIBUJA_PIEZA
 		ret
-		cancelar_movimiento_ab:
-		call MOVER_ARRIBA
 		dejar_mover:
 		call RESET_PROC
 		ret
@@ -1624,67 +1594,7 @@ salir:				;inicia etiqueta salir
 		ret 
 	endp
 
-	;TOMA COMO PARAMETROS PIEZA_COLS Y DEVUELVE BX=1 SI HAY COLISION Y BX=0 SI NO
-	DETECTAR_COLISION proc
-		mov col_det,0h
-		lea di,[pieza_cols]
-		lea si,[pieza_rens]
-		mov cx,4
-	loop_colisiona:
-		push cx
-		push si
-		push di
-		posiciona_cursor [si],[di]
-		;detectar colisión 
-		mov ah,08h ;checa la casilla y obtiene color (ah) y caracter (al)
-		int 10H
-		cmp al,254d
-		jnz no_colision
-			mov col_det,01h
-	no_colision:
-		pop di
-		pop si
-		pop cx
-		inc di
-		inc si
-		loop loop_colisiona
-		ret
-	endp
-
-
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;ESTO ES NADA MÁS PARA HACER DEBUG VISUAL
-	; mov [boton_caracter],95d
-	; mov [boton_color],bgAmarillo
-	; mov [boton_renglon],stop_ren
-	; mov [boton_columna],stop_col
-	; call IMPRIME_BOTON
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;ESTO ES NADA MÁS PARA HACER DEBUG VISUAL
-	; mov [boton_caracter],al
-	; mov [boton_color],bgAmarillo
-	; mov [boton_renglon],stop_ren
-	; mov [boton_columna],stop_col
-	; call IMPRIME_BOTON
-
-	; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;  xor bx,bx
-	;  mov bl,al
-	;  mov ren_aux,stop_ren
-	;  mov col_aux,stop_col
-	;  call IMPRIME_BX 	
-
-	; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;FIN PROCEDIMIENTOS;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-end inicio			;fin de etiqueta inicio, fin de programa
+	end inicio			;fin de etiqueta inicio, fin de programa
