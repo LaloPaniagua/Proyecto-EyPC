@@ -1624,7 +1624,8 @@ salir:				;inicia etiqueta salir
 		ret 
 	endp
 
-	;TOMA COMO PARAMETROS PIEZA_COLS Y DEVUELVE BX=1 SI HAY COLISION Y BX=0 SI NO
+	;TOMA COMO PARAMETROS PIEZA_COLS Y PIEZA_RENS que se supone ya deben estar actualizados. 
+	;Altera el valor de la vandera col_det a uno si corresponde
 	DETECTAR_COLISION proc
 		mov col_det,0h
 		lea di,[pieza_cols]
