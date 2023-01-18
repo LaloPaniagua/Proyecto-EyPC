@@ -61,7 +61,7 @@ bgBlanco 		equ		0F0h
 lim_superior 	equ		1
 lim_inferior 	equ		23
 lim_izquierdo 	equ		1
-lim_derecho 	equ		30
+lim_derecho 	equ		10
 ;Valores de referencia para la posición inicial de la primera pieza
 ini_columna 	equ 	lim_derecho/2
 ini_renglon 	equ 	2
@@ -141,6 +141,7 @@ status_linea	db		1			;Bandera que indica en que posición está la linea
 sentido_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
 col_det			db		0			;Indica si se ha detectado una colisión
 despl_lograd	db		0 		;Sirve para verificar si un desplazamiento lateral fue exitoso.
+byW				db		0		;Ayuda al proc MOV_ABAJO a repetirse hasta el suelo por la tecla w
 
 ;Coordenadas de la posición de referencia para la pieza en el área de juego
 pieza_col		db 		ini_columna
@@ -443,7 +444,9 @@ keyf:
 	call GIRO_IZQ
 	jmp teclado
 keyw:
-	call MOVER_ARRIBA
+	mov byW,1
+	call MOVER_ABAJO
+	mov byW,0
 	jmp teclado
 
 
@@ -1313,21 +1316,21 @@ salir:				;inicia etiqueta salir
 	endp
 
 	BORRA_NEXT proc
-		posiciona_cursor 4,47
+		posiciona_cursor 4,lim_derecho+17
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 4,48
+		posiciona_cursor 4,lim_derecho+18
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 4,49
+		posiciona_cursor 4,lim_derecho+19
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 4,50
+		posiciona_cursor 4,lim_derecho+20
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 5,47
+		posiciona_cursor 5,lim_derecho+17
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 5,48
+		posiciona_cursor 5,lim_derecho+18
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 5,49
+		posiciona_cursor 5,lim_derecho+19
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 5,50
+		posiciona_cursor 5,lim_derecho+20
 		imprime_caracter_color 254,0,0
 		ret
 	endp
@@ -1399,6 +1402,7 @@ salir:				;inicia etiqueta salir
 	endp
 
 	MOVER_ABAJO proc
+		caida:
 		cmp [pieza_rens],lim_inferior
 		je dejar_mover
 		cmp [pieza_rens+1],lim_inferior
@@ -1423,8 +1427,9 @@ salir:				;inicia etiqueta salir
 		cmp col_det,01H
 		je cancelar_movimiento_ab
 		;;;;;;;;;;;;;;;;;;
-
 		call DIBUJA_PIEZA
+		cmp byW,1
+		je caida
 		ret
 		cancelar_movimiento_ab:
 		call MOVER_ARRIBA
@@ -1438,9 +1443,7 @@ salir:				;inicia etiqueta salir
 		mov pieza_col,ini_columna
 		call GENERAR_PIEZA_NEXT
 		call BORRA_NEXT
-		;call CLEAN_CURRENT_MATRIX
 		call DIBUJA_NEXT
-		;call CLEAN_CURRENT_MATRIX
 		call DIBUJA_ACTUAL
 		ret
 	endp
@@ -1494,7 +1497,7 @@ salir:				;inicia etiqueta salir
 		fin_giro_der:
 		call DIBUJA_PIEZA
 		ret
-		cancelar_giro_der:
+		cancelar_giro_der: ;Intenta conservar el giro desplazando a algun lado la pieza, si no puede, cancela el giro
 		call TRY_MOV_DER
 		cmp despl_lograd,1
 		je fin_giro_izq
@@ -1708,9 +1711,12 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 
-	TRY_MOV_DER proc
-		cmp pieza_actual,0 ;checa si es una línea
 
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;Intenta hacer un desplazamiento a la derecha, si provoca colisión, regresa la pieza adonde estaba originalmente
+	;edita la variable despl_logrado. Se creó para los desplazamientos provocadas por los giros.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	TRY_MOV_DER proc
 		mov despl_lograd,0
 		cmp pieza_cols,lim_derecho
 		je try_dejar_mover_der
@@ -1761,6 +1767,11 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;Intenta hacer un desplzamiento a la izquierda, si provoca colisión, regresa la pieza a donde estaba originalmente
+	;edita la variable despl_logrado. Se creó para los desplazamientos provocadas por los giros.
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	TRY_MOV_IZQ proc
 		mov despl_lograd,0
 		cmp pieza_cols,lim_izquierdo
