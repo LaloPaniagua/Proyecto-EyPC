@@ -1457,7 +1457,7 @@ salir:				;inicia etiqueta salir
 		game_over:
 		clear
 		posiciona_cursor 0,0
-		imprime_cadena_color msg_game_over,fin_msg_game_over-msg_game_over,cVerdeClaro,bgNegro
+		;imprime_cadena_color msg_game_over,fin_msg_game_over-msg_game_over,cVerdeClaro,bgNegro
 		game_over_opcion:
 		mov ah,0
 		int 16h
