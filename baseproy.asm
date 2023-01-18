@@ -140,6 +140,8 @@ isNext			db		0 			;Bandera que determina si DIBUJA_PIEZA está dibujando una nex
 status_linea	db		1			;Bandera que indica en que posición está la linea
 sentido_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
 col_det			db		0			;Indica si se ha detectado una colisión
+msg_game_over		db		10,"Fin del juego :C",10,13,"Presione q para salir o presione p para volver a jugar"
+fin_msg_game_over 	db		""
 despl_lograd	db		0 		;Sirve para verificar si un desplazamiento lateral fue exitoso.
 byW				db		0		;Ayuda al proc MOV_ABAJO a repetirse hasta el suelo por la tecla w
 
