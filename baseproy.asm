@@ -138,8 +138,9 @@ speed 			dw 		4
 next 			db 		?
 isNext			db		0 			;Bandera que determina si DIBUJA_PIEZA está dibujando una next o la actual.
 status_linea	db		1			;Bandera que indica en que posición está la linea
-aux_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
+sentido_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
 col_det			db		0			;Indica si se ha detectado una colisión
+despl_lograd	db		0 		;Sirve para verificar si un desplazamiento lateral fue exitoso.
 
 ;Coordenadas de la posición de referencia para la pieza en el área de juego
 pieza_col		db 		ini_columna
@@ -1478,13 +1479,31 @@ salir:				;inicia etiqueta salir
 		normal_der:
 		call ROT_MATRIX_HORA
 		call CODEC_MATRIX_3x3
-		jmp fin_giro_der
-		girolinea_der:
-		mov aux_giro,1
+		jmp det_col_gir_der
+
+		girolinea_der:	;EXCLUSIVO PARA LA LINEA
+		mov sentido_giro,1
 		call GIRO_LINEA
+		
+		det_col_gir_der:
+		;;;;DETECTA COLISIÓN
+		call DETECTAR_COLISION
+		cmp col_det,01H
+		je cancelar_giro_der
+		;;;;;;;;;;;;;;;;;;;;
 		fin_giro_der:
 		call DIBUJA_PIEZA
 		ret
+		cancelar_giro_der:
+		call TRY_MOV_DER
+		cmp despl_lograd,1
+		je fin_giro_izq
+		call TRY_MOV_IZQ
+		cmp despl_lograd,1
+		je fin_giro_izq
+		call GIRO_IZQ
+		ret
+
 	endp
 
 	GIRO_IZQ proc
@@ -1496,13 +1515,35 @@ salir:				;inicia etiqueta salir
 		normal_iz:
 		call ROT_MATRIX_ANTIHORA
 		call CODEC_MATRIX_3x3
-		jmp fin_giro_izq
-		girolinea_izq:
-		mov aux_giro,0
+		jmp det_col_gir_izq
+
+		girolinea_izq:  ;EXCLUSIVO PARA LINEA
+		mov sentido_giro,0
 		call GIRO_LINEA
+
+		det_col_gir_izq:
+		;;;;DETECTA COLISIÓN
+		call DETECTAR_COLISION
+		cmp col_det,01H
+		je cancelar_giro_izq
+		;;;;;;;;;;;;;;;;;;;;
+
 		fin_giro_izq:
 		call DIBUJA_PIEZA
 		ret
+
+		cancelar_giro_izq:  ;Intenta conservar el giro desplazando a algun lado la pieza, si no puede, cancela el giro
+		call TRY_MOV_IZQ
+		cmp despl_lograd,1
+		je fin_giro_izq
+		call TRY_MOV_DER
+		cmp despl_lograd,1
+		je fin_giro_izq
+		call GIRO_DER   ;Cancelamiento del giro
+		ret
+
+		
+
 	endp
   
 	GIRO_LINEA proc
@@ -1510,7 +1551,7 @@ salir:				;inicia etiqueta salir
 	lea si, [pieza_rens] ;eje y
 	mov al, pieza_ren
 	mov ah, pieza_col
-	cmp aux_giro, 0 ;Gira a la izquierda
+	cmp sentido_giro, 0 ;Gira a la izquierda
 	je GIROS_IZQUIERDOS
 	jmp GIROS_DERECHOS
 	GIROS_IZQUIERDOS:
@@ -1654,8 +1695,8 @@ salir:				;inicia etiqueta salir
 		;detectar colisión 
 		mov ah,08h ;checa la casilla y obtiene color (ah) y caracter (al)
 		int 10H
-		cmp al,254d
-		jnz no_colision
+		cmp al,32d
+		jz no_colision
 			mov col_det,01h
 	no_colision:
 		pop di
@@ -1664,6 +1705,107 @@ salir:				;inicia etiqueta salir
 		inc di
 		inc si
 		loop loop_colisiona
+		ret
+	endp
+
+	TRY_MOV_DER proc
+		cmp pieza_actual,0 ;checa si es una línea
+
+		mov despl_lograd,0
+		cmp pieza_cols,lim_derecho
+		je try_dejar_mover_der
+		cmp pieza_cols+1,lim_derecho
+		je try_dejar_mover_der
+		cmp pieza_cols+2,lim_derecho
+		je try_dejar_mover_der
+		cmp pieza_cols+3,lim_derecho
+		je try_dejar_mover_der
+
+		lea di,[pieza_cols]
+		inc pieza_col
+		mov CX, 4
+		try_loop_der:
+		mov al,[di]
+		inc al
+		mov [di],al
+		inc di
+		loop try_loop_der
+
+		;;;DETECTA COLISIÓN;;;;;;
+		call DETECTAR_COLISION
+		cmp col_det,01H
+		je try_cancelar_movimiento_d
+		;;;;;;;;;;;;;;;;;;
+
+		mov despl_lograd,1
+		call DIBUJA_PIEZA
+		ret
+		try_cancelar_movimiento_d:
+		mov despl_lograd,0
+		;;;;;;;;;;; Se forza la pieza a regresar a su lugar
+		lea di,[pieza_cols]
+		dec pieza_col
+		mov CX, 4
+		force_izq:
+		mov al,[di]
+		dec al
+		mov [di],al
+		inc di
+		loop force_izq
+		;;;;;;;;;;;;;;;;;;
+		;call DIBUJA_PIEZA
+		ret
+		;;;;
+		call MOVER_IZQ
+		try_dejar_mover_der:
+		ret
+	endp
+
+	TRY_MOV_IZQ proc
+		mov despl_lograd,0
+		cmp pieza_cols,lim_izquierdo
+		je try_dejar_mover_izq
+		cmp pieza_cols+1,lim_izquierdo
+		je try_dejar_mover_izq
+		cmp pieza_cols+2,lim_izquierdo
+		je try_dejar_mover_izq
+		cmp pieza_cols+3,lim_izquierdo
+		je try_dejar_mover_izq
+		
+		;call BORRA_PIEZA
+		lea di,[pieza_cols]
+		dec pieza_col
+		mov CX, 4
+		try_loop_izq:
+		mov al,[di]
+		dec al
+		mov [di],al
+		inc di
+		loop try_loop_izq
+
+		;;;DETECTA COLISIÓN;;;;;;
+		call DETECTAR_COLISION
+		cmp col_det,01H
+		je try_cancelar_movimiento_i
+		;;;;;;;;;;;;;;;;;;
+
+		mov despl_lograd,1
+		call DIBUJA_PIEZA
+		ret
+		try_cancelar_movimiento_i:
+		;;;;FUERZA LA PIEZA A REGRESAR DONDE ESTABA
+		lea di,[pieza_cols]
+		inc pieza_col
+		mov CX, 4
+		force_der:
+		mov al,[di]
+		inc al
+		mov [di],al
+		inc di
+		loop force_der
+		;;;;;;;;;;
+		mov despl_lograd,0
+		try_dejar_mover_izq:
 		ret
 	endp
 
