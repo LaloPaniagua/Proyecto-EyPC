@@ -197,7 +197,8 @@ tick_ms			dw 		55 		;55 ms por cada tick del sistema, esta variable se usa para 
 mil				dw		1000 	;dato de valor decimal 1000 para operación DIV entre 1000
 diez 			dw 		10
 
-status 			db 		activo 		;Status de juegos: 0 pausa, 1 activo
+status 			db 		activo 		;Status de juego: 0 pausa, 1 activo
+
 conta 			db 		0 		;Contador auxiliar para algunas operaciones
 
 ;Variables que sirven de parámetros de entrada para el procedimiento IMPRIME_BOTON
@@ -405,6 +406,7 @@ imprime_ui:
 mouse_no_clic:
 cmp [status],pausa
 je mouse
+
 ;;;;;;;;;;;;;;CONTROL DE TECLADO (SO FAR);;;;;;;;;;;;;;;
 teclado:
 	call GRAVEDAD
@@ -489,7 +491,7 @@ conversion_mouse:
 	;se va a revisar si fue dentro del boton [X]
 	cmp dx,0
 	je boton_x
-	cmp dx,pause_sup
+  cmp dx,pause_sup
 	jge botones_auxiliares
 	jmp mouse_no_clic
 
@@ -527,7 +529,6 @@ conversion_mouse:
 	revisar_status:
 	cmp [status],pausa
 	je mouse
-	jmp mouse_no_clic
 boton_x:
 	jmp boton_x1
 ;Lógica para revisar si el mouse fue presionado en [X]
