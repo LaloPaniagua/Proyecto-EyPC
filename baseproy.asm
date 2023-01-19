@@ -7,6 +7,9 @@ title "Proyecto: Tetris" ;codigo opcional. Descripcion breve del programa, el te
 	y db  6
 	flagBorrar db 0
 	time db 0
+	aux_linea db 1
+	aux_columna_linea db 0
+	aux_linea_borrar db 1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Definición de constantes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1436,6 +1439,7 @@ salir:				;inicia etiqueta salir
 		cancelar_movimiento_ab:
 		call MOVER_ARRIBA
 		dejar_mover:
+		call CHECK_LINEA
 		call RESET_PROC
 		ret
 	endp
@@ -1842,6 +1846,113 @@ salir:				;inicia etiqueta salir
 		mov despl_lograd,0
 		try_dejar_mover_izq:
 		ret
+	endp
+	
+		CHECK_LINEA proc
+		;23,1 inferior izquierdo
+		;23,30 inferior derecho
+		mov [aux_columna_linea],23
+		 ;posicion
+		aux_columna_loop:
+		mov [aux_linea],1
+		aux_linea_loop:
+			posiciona_cursor [aux_columna_linea],[aux_linea]
+			;imprime_caracter_color 254,1,1
+			mov ah,8
+			int 10h
+			cmp al,254
+			jne salir_linea_loop ;sale si no hay cuadro
+			cmp ah,0
+			je salir_linea_loop
+			inc [aux_linea]
+			cmp [aux_linea],31
+			je check_linea_borrar
+			jmp aux_linea_loop
+		check_linea_borrar:
+		call BORRAR_LINEA_PUNTO
+		call RECORRER_ABAJO
+		call QUITAR_ULTIMA
+		jmp salir_todos_loop
+		salir_linea_loop:
+		dec [aux_columna_linea]
+		cmp [aux_columna_linea],10
+		je salir_todos_loop
+		jmp aux_columna_loop
+		salir_todos_loop:
+		ret 
+	endp
+
+	BORRAR_LINEA_PUNTO proc
+		mov [aux_linea_borrar],1
+		aux_linea_loop2:
+			posiciona_cursor [aux_columna_linea],[aux_linea_borrar]
+			imprime_caracter_color 254,1,1
+			inc [aux_linea_borrar]
+			cmp [aux_linea_borrar],31
+			je salir_linea_loop2
+		jmp aux_linea_loop2
+		salir_linea_loop2:
+		ret 
+	endp
+
+	RECORRER_ABAJO proc
+		dec [aux_columna_linea]
+		push [aux_columna_linea]
+		aux_columna_loop2:
+		mov [aux_linea],1
+		aux_linea_loop3:
+			posiciona_cursor [aux_columna_linea],[aux_linea]
+			mov ah,8
+			int 10h
+			cmp al,254
+			je mover_abajo_recorrer
+			volver_recorrer_abajo:
+			inc [aux_linea]
+			cmp [aux_linea],31
+			je salir_linea_loop3
+		jmp aux_linea_loop3
+		mover_abajo_recorrer:
+			mov ah,8
+			int 10h
+			mov [color],ah
+			inc [aux_columna_linea]
+			posiciona_cursor [aux_columna_linea],[aux_linea]
+			imprime_caracter_color 254,[color],bgGrisOscuro
+			dec [aux_columna_linea]
+			jmp volver_recorrer_abajo
+		salir_linea_loop3:
+		dec [aux_columna_linea]
+		cmp [aux_columna_linea],10
+		je salir_todos_loop2
+		jmp aux_columna_loop2
+		salir_todos_loop2:
+		ret
+	endp
+
+	QUITAR_ULTIMA proc
+		pop [aux_columna_linea]
+		aux_columna_loop5:
+		mov [aux_linea],1
+		aux_linea_loop5:
+			posiciona_cursor [aux_columna_linea],[aux_linea]
+			;imprime_caracter_color 254,1,1
+			mov ah,8
+			int 10h
+			cmp al,0
+			jne salir_linea_loop5
+			inc [aux_linea]
+			cmp [aux_linea],31
+			jne aux_linea_loop5
+			inc [aux_columna_linea]
+			call BORRAR_LINEA_PUNTO
+			jmp salir_todos_loop5
+		salir_linea_loop5:
+		dec [aux_columna_linea]
+		cmp [aux_columna_linea],10
+		je salir_todos_loop5
+		jmp aux_columna_loop5
+		salir_todos_loop5:
+		ret 
 	endp
 
 
