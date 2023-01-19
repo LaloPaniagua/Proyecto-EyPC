@@ -1451,29 +1451,37 @@ salir:				;inicia etiqueta salir
 		call GENERAR_PIEZA_NEXT
 		call BORRA_NEXT
 		call DIBUJA_NEXT
-		mov cx,30
+		mov cx,lim_derecho
 		verificar_game_over:
 		posiciona_cursor 3,cl
 		mov ah,08h
 		int 10h
 		cmp al,254d
-		je game_over
+		je fin_juego
 		loop verificar_game_over
 		call DIBUJA_ACTUAL
 		ret
+		fin_juego:
+		call SCREEN_GAMEOVER
+		ret
+		
+	endp
+
+	SCREEN_GAMEOVER proc
 		game_over:
 		clear
 		posiciona_cursor 0,0
-		imprime_cadena_color msg_game_over,fin_msg_game_over-msg_game_over,cVerdeClaro,bgNegro
+		imprime_cadena_color msg_game_over,fin_msg_game_over-msg_game_over,cBlanco,bgNegro
 		game_over_opcion:
+		mov ah, 01h ;lee con minusculas
+		int 16h
+		jz game_over_opcion
 		mov ah,0
 		int 16h
-		cmp al,113
+		cmp al,113 
 		je salir
 		cmp al,112
-		je inicio
-		jmp game_over_opcion
-		ret
+		je imprime_ui
 		ret
 	endp
 
