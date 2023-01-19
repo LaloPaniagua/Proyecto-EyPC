@@ -1897,7 +1897,7 @@ salir:				;inicia etiqueta salir
 
 	RECORRER_ABAJO proc
 		dec [aux_columna_linea]
-		push [aux_columna_linea]
+		;push [aux_columna_linea]
 		aux_columna_loop2:
 		mov [aux_linea],1
 		aux_linea_loop3:
@@ -1930,7 +1930,7 @@ salir:				;inicia etiqueta salir
 	endp
 
 	QUITAR_ULTIMA proc
-		pop [aux_columna_linea]
+		;pop [aux_columna_linea]
 		aux_columna_loop5:
 		mov [aux_linea],1
 		aux_linea_loop5:
