@@ -7,6 +7,18 @@ title "Proyecto: Tetris" ;codigo opcional. Descripcion breve del programa, el te
 	y db  6
 	flagBorrar db 0
 	time db 0
+	borrar_linea_aux db 1
+	aux_linea db 1
+	aux_linea_borrar db 1
+	aux_linea2 db 1
+	aux_linea3 db 1
+	aux_linea4 db 1
+	aux_linea5 db 1
+	color db 0
+	aux_columna_linea db 0
+	aux_columna_linea2 db 0
+	aux_columna_rec db 0
+	aux_linea_cmp db 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Definición de constantes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -139,6 +151,7 @@ next 			db 		?
 isNext			db		0 			;Bandera que determina si DIBUJA_PIEZA está dibujando una next o la actual.
 status_linea	db		1			;Bandera que indica en que posición está la linea
 aux_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
+col_det			db		0			;Indica si se ha detectado una colisión
 
 ;Coordenadas de la posición de referencia para la pieza en el área de juego
 pieza_col		db 		ini_columna
@@ -946,9 +959,10 @@ salir:				;inicia etiqueta salir
 
 	;Procedimiento para dibujar una pieza de S invertida
 	DIBUJA_S_INVERTIDA proc
-		mov [cm_r2],1		; 0 0 0 
+		;call CLEAN_CURRENT_MATRIX
+		mov [cm_r2],1		; 0 1 1 
 		mov [cm_r2+1],1  	; 1 1 0 
-		mov [cm_r3+1],1		; 0 1 1 
+		mov [cm_r3+1],1		; 1 0 1 
 		mov [cm_r3+2],1		
 
 		mov [pieza_color],cRojoClaro
@@ -1003,6 +1017,8 @@ salir:				;inicia etiqueta salir
 	endp
 	
    BORRA_PIEZA proc
+		cmp col_det,01H
+		je salir_borrar
 		lea di,[pieza_cols]
 		lea si,[pieza_rens]
 		mov cx,4
@@ -1011,13 +1027,15 @@ salir:				;inicia etiqueta salir
 		push si
 		push di
 		posiciona_cursor [si],[di]
-		imprime_caracter_color 253,0,0
+		imprime_caracter_color 0,0,0
 		pop di
 		pop si
 		pop cx
 		inc di
 		inc si
 		loop loop_borra_pieza
+		salir_borrar:
+		mov col_det,00H
 		ret
 	endp
 
@@ -1088,6 +1106,9 @@ salir:				;inicia etiqueta salir
 	;Dentro del procedimiento se utilizan variables referentes a la pieza actual
 	DIBUJA_ACTUAL proc
 		mov isNext,0
+		call CLEAN_CURRENT_MATRIX
+		mov pieza_ren,ini_renglon
+		mov pieza_col,ini_columna
 		lea di,[pieza_cols] ; di es para x
 		lea si,[pieza_rens] ; si para y
 		mov al,pieza_col
@@ -1143,20 +1164,32 @@ salir:				;inicia etiqueta salir
 	endp
 
 	CLEAN_CURRENT_MATRIX proc 	;Limpia la matriz binaria 3x3 que se usa para las piezas
-		mov [cm_r1],0
-		mov [cm_r1+1],0
-		mov [cm_r1+2],0
-		mov [cm_r2],0
-		mov [cm_r2+1],0
-		mov [cm_r2+2],0
-		mov [cm_r3],0
-		mov [cm_r3+1],0
-		mov [cm_r3+2],0
-		
+		mov cx,3
+		xor ax,ax
+		lea di,[cm_r1]
+		clean_r1:
+		mov [di],al
+		inc di
+		loop clean_r1
+
+		mov cx,3
+		lea di,[cm_r2]
+		clean_r2:
+		mov [di],al
+		inc di
+		loop clean_r2
+
+		mov cx,3
+		lea di,[cm_r3]
+		clean_r3:
+		mov [di],al
+		inc di
+		loop clean_r3
+		ret
 	endp
 
 	CODEC_MATRIX_3x3 proc ; Realiza una codificación. Donde haya 1's en su matriz, crea una coordenada en di y si
-
+	xor ax,ax
 	asig11:				; Si es 1, lo guarda en la pila, sigue verificando
 		cmp [cm_r1],1
 		jnz asig12
@@ -1238,6 +1271,7 @@ salir:				;inicia etiqueta salir
 		pop ax
 		mov [di+3], al
 		mov [si+3], ah
+		
 		ret
 	endp
 
@@ -1290,7 +1324,6 @@ salir:				;inicia etiqueta salir
 	endp
 
 	BORRA_NEXT proc
-		BORRA_NEXT proc
 		posiciona_cursor 4,47
 		imprime_caracter_color 254,0,0
 		posiciona_cursor 4,48
@@ -1319,6 +1352,7 @@ salir:				;inicia etiqueta salir
 		je dejar_mover_izq
 		cmp pieza_cols+3,lim_izquierdo
 		je dejar_mover_izq
+		
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		dec pieza_col
@@ -1329,7 +1363,15 @@ salir:				;inicia etiqueta salir
 		mov [di],al
 		inc di
 		loop loop_izq
+		;;;DETECTA COLISIÓN;;;;;;
+		call DETECTAR_COLISION
+		cmp col_det,01H
+		je cancelar_movimiento_i
+		;;;;;;;;;;;;;;;;;;
 		call DIBUJA_PIEZA
+		ret
+		cancelar_movimiento_i:
+		call MOVER_DER
 		dejar_mover_izq:
 		ret
 	endp
@@ -1343,6 +1385,7 @@ salir:				;inicia etiqueta salir
 		je dejar_mover_der
 		cmp pieza_cols+3,lim_derecho
 		je dejar_mover_der
+
 		call BORRA_PIEZA
 		lea di,[pieza_cols]
 		inc pieza_col
@@ -1353,20 +1396,29 @@ salir:				;inicia etiqueta salir
 		mov [di],al
 		inc di
 		loop loop_der
+		;;;DETECTA COLISIÓN;;;;;;
+		call DETECTAR_COLISION
+		cmp col_det,01H
+		je cancelar_movimiento_d
+		;;;;;;;;;;;;;;;;;;
 		call DIBUJA_PIEZA
+		ret
+		cancelar_movimiento_d:
+		call MOVER_IZQ
 		dejar_mover_der:
 		ret
 	endp
 
 	MOVER_ABAJO proc
-		cmp pieza_rens,lim_inferior
+		cmp [pieza_rens],lim_inferior
 		je dejar_mover
-		cmp pieza_rens+1,lim_inferior
+		cmp [pieza_rens+1],lim_inferior
 		je dejar_mover
-		cmp pieza_rens+2,lim_inferior
+		cmp [pieza_rens+2],lim_inferior
 		je dejar_mover
-		cmp pieza_rens+3,lim_inferior
+		cmp [pieza_rens+3],lim_inferior
 		je dejar_mover
+
 		call BORRA_PIEZA
 		lea di,[pieza_rens]
 		inc pieza_ren
@@ -1377,20 +1429,31 @@ salir:				;inicia etiqueta salir
 		mov [di],al
 		inc di
 		loop loop_abj
-		call DIBUJA_ACTUAL
+		;;;DETECTA COLISIÓN;;;;;;
+		call DETECTAR_COLISION
+		cmp col_det,01H
+		je cancelar_movimiento_ab
+		;;;;;;;;;;;;;;;;;;
+
+		call DIBUJA_PIEZA
 		ret
+		cancelar_movimiento_ab:
+		call MOVER_ARRIBA
 		dejar_mover:
+		call CHECK_LINEA
 		call RESET_PROC
 		ret
 	endp
 
 	RESET_PROC proc
 		mov pieza_ren,ini_renglon
-		mov pieza_col,15
+		mov pieza_col,ini_columna
 		call GENERAR_PIEZA_NEXT
-		call DIBUJA_ACTUAL
 		call BORRA_NEXT
+		;call CLEAN_CURRENT_MATRIX
 		call DIBUJA_NEXT
+		;call CLEAN_CURRENT_MATRIX
+		call DIBUJA_ACTUAL
 		ret
 	endp
 
@@ -1589,7 +1652,155 @@ salir:				;inicia etiqueta salir
 		ret 
 	endp
 
+	;TOMA COMO PARAMETROS PIEZA_COLS Y PIEZA_RENS que se supone ya deben estar actualizados. 
+	;Altera el valor de la vandera col_det a uno si corresponde
+	DETECTAR_COLISION proc
+		mov col_det,0h
+		lea di,[pieza_cols]
+		lea si,[pieza_rens]
+		mov cx,4
+	loop_colisiona:
+		push cx
+		push si
+		push di
+		posiciona_cursor [si],[di]
+		;detectar colisión 
+		mov ah,08h ;checa la casilla y obtiene color (ah) y caracter (al)
+		int 10H
+		cmp al,254d
+		jnz no_colision
+			mov col_det,01h
+	no_colision:
+		pop di
+		pop si
+		pop cx
+		inc di
+		inc si
+		loop loop_colisiona
+		ret
+	endp
+
+	CHECK_LINEA proc
+		;23,1 inferior izquierdo
+		;23,30 inferior derecho
+		mov [aux_columna_linea],23
+		 ;posicion
+		aux_columna_loop:
+		mov [aux_linea],1
+		aux_linea_loop:
+			posiciona_cursor [aux_columna_linea],[aux_linea]
+			;imprime_caracter_color 254,1,1
+			mov ah,8
+			int 10h
+			cmp al,254
+			jne salir_linea_loop ;sale si no hay cuadro
+			cmp ah,0
+			je salir_linea_loop
+			inc [aux_linea]
+			cmp [aux_linea],31
+			je check_linea_borrar
+			jmp aux_linea_loop
+		check_linea_borrar:
+		call BORRAR_LINEA_PUNTO
+		call RECORRER_ABAJO
+		jmp salir_todos_loop
+		salir_linea_loop:
+		dec [aux_columna_linea]
+		cmp [aux_columna_linea],10
+		je salir_todos_loop
+		jmp aux_columna_loop
+		salir_todos_loop:
+		ret 
+	endp
+
+	BORRAR_LINEA_PUNTO proc
+		mov [aux_linea_borrar],1
+		aux_linea_loop2:
+			posiciona_cursor [aux_columna_linea],[aux_linea_borrar]
+			imprime_caracter_color 0,0,0
+			inc [aux_linea_borrar]
+			cmp [aux_linea_borrar],31
+			je salir_linea_loop2
+		jmp aux_linea_loop2
+		salir_linea_loop2:
+		ret 
+	endp
+
+	RECORRER_ABAJO proc
+		dec [aux_columna_linea]
+		mov dl,[aux_columna_linea]
+		aux_columna_loop2:
+		mov [aux_linea],1
+		aux_linea_loop3:
+			posiciona_cursor [aux_columna_linea],[aux_linea]
+			mov ah,8
+			int 10h
+			cmp al,254
+			je mover_abajo_recorrer
+			cmp al,0
+			je mover_abajo_recorrer_nulo
+			volver_recorrer_abajo:
+			inc [aux_linea]
+			cmp [aux_linea],31
+			je salir_linea_loop3
+		jmp aux_linea_loop3
+		mover_abajo_recorrer:
+			mov ah,8
+			int 10h
+			mov [color],ah
+			inc [aux_columna_linea]
+			posiciona_cursor [aux_columna_linea],[aux_linea]
+			imprime_caracter_color 254,[color],bgGrisOscuro
+			dec [aux_columna_linea]
+			jmp volver_recorrer_abajo
+		mover_abajo_recorrer_nulo:
+			inc [aux_columna_linea]
+			posiciona_cursor [aux_columna_linea],[aux_linea]
+			imprime_caracter_color 0,0,0
+			dec [aux_columna_linea]
+			jmp volver_recorrer_abajo
+		jmp volver_recorrer_abajo
+		salir_linea_loop3:
+		dec [aux_columna_linea]
+		cmp [aux_columna_linea],10
+		je salir_todos_loop2
+		jmp aux_columna_loop2
+		salir_todos_loop2:
+		ret
+	endp
+	;;;;;;;;;;;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;ESTO ES NADA MÁS PARA HACER DEBUG VISUAL
+	; mov [boton_caracter],95d
+	; mov [boton_color],bgAmarillo
+	; mov [boton_renglon],stop_ren
+	; mov [boton_columna],stop_col
+	; call IMPRIME_BOTON
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;ESTO ES NADA MÁS PARA HACER DEBUG VISUAL
+	; mov [boton_caracter],al
+	; mov [boton_color],bgAmarillo
+	; mov [boton_renglon],stop_ren
+	; mov [boton_columna],stop_col
+	; call IMPRIME_BOTON
+
+	; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;  xor bx,bx
+	;  mov bl,al
+	;  mov ren_aux,stop_ren
+	;  mov col_aux,stop_col
+	;  call IMPRIME_BX 	
+
+	; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;FIN PROCEDIMIENTOS;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	end inicio			;fin de etiqueta inicio, fin de programa
+end inicio			;fin de etiqueta inicio, fin de programa
