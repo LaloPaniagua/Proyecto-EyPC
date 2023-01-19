@@ -7,10 +7,18 @@ title "Proyecto: Tetris" ;codigo opcional. Descripcion breve del programa, el te
 	y db  6
 	flagBorrar db 0
 	time db 0
+	borrar_linea_aux db 1
 	aux_linea db 1
-	aux_columna_linea db 0
 	aux_linea_borrar db 1
+	aux_linea2 db 1
+	aux_linea3 db 1
+	aux_linea4 db 1
+	aux_linea5 db 1
 	color db 0
+	aux_columna_linea db 0
+	aux_columna_linea2 db 0
+	aux_columna_rec db 0
+	aux_linea_cmp db 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Definición de constantes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,7 +73,7 @@ bgBlanco 		equ		0F0h
 lim_superior 	equ		1
 lim_inferior 	equ		23
 lim_izquierdo 	equ		1
-lim_derecho 	equ		10
+lim_derecho 	equ		30
 ;Valores de referencia para la posición inicial de la primera pieza
 ini_columna 	equ 	lim_derecho/2
 ini_renglon 	equ 	2
@@ -142,12 +150,8 @@ speed 			dw 		4
 next 			db 		?
 isNext			db		0 			;Bandera que determina si DIBUJA_PIEZA está dibujando una next o la actual.
 status_linea	db		1			;Bandera que indica en que posición está la linea
-sentido_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
+aux_giro		db		0			;Ayuda al giro de la linea, 0 es izquierda 1 es derecha
 col_det			db		0			;Indica si se ha detectado una colisión
-msg_game_over		db		10,"Fin del juego :C",10,13,"Presione q para salir o presione p para volver a jugar"
-fin_msg_game_over 	db		""
-despl_lograd	db		0 		;Sirve para verificar si un desplazamiento lateral fue exitoso.
-byW				db		0		;Ayuda al proc MOV_ABAJO a repetirse hasta el suelo por la tecla w
 
 ;Coordenadas de la posición de referencia para la pieza en el área de juego
 pieza_col		db 		ini_columna
@@ -450,9 +454,7 @@ keyf:
 	call GIRO_IZQ
 	jmp teclado
 keyw:
-	mov byW,1
-	call MOVER_ABAJO
-	mov byW,0
+	call MOVER_ARRIBA
 	jmp teclado
 
 
@@ -1322,21 +1324,21 @@ salir:				;inicia etiqueta salir
 	endp
 
 	BORRA_NEXT proc
-		posiciona_cursor 4,lim_derecho+17
+		posiciona_cursor 4,47
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 4,lim_derecho+18
+		posiciona_cursor 4,48
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 4,lim_derecho+19
+		posiciona_cursor 4,49
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 4,lim_derecho+20
+		posiciona_cursor 4,50
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 5,lim_derecho+17
+		posiciona_cursor 5,47
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 5,lim_derecho+18
+		posiciona_cursor 5,48
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 5,lim_derecho+19
+		posiciona_cursor 5,49
 		imprime_caracter_color 254,0,0
-		posiciona_cursor 5,lim_derecho+20
+		posiciona_cursor 5,50
 		imprime_caracter_color 254,0,0
 		ret
 	endp
@@ -1408,7 +1410,6 @@ salir:				;inicia etiqueta salir
 	endp
 
 	MOVER_ABAJO proc
-		caida:
 		cmp [pieza_rens],lim_inferior
 		je dejar_mover
 		cmp [pieza_rens+1],lim_inferior
@@ -1433,9 +1434,8 @@ salir:				;inicia etiqueta salir
 		cmp col_det,01H
 		je cancelar_movimiento_ab
 		;;;;;;;;;;;;;;;;;;
+
 		call DIBUJA_PIEZA
-		cmp byW,1
-		je caida
 		ret
 		cancelar_movimiento_ab:
 		call MOVER_ARRIBA
@@ -1450,30 +1450,10 @@ salir:				;inicia etiqueta salir
 		mov pieza_col,ini_columna
 		call GENERAR_PIEZA_NEXT
 		call BORRA_NEXT
+		;call CLEAN_CURRENT_MATRIX
 		call DIBUJA_NEXT
-		mov cx,30
-		verificar_game_over:
-		posiciona_cursor 3,cl
-		mov ah,08h
-		int 10h
-		cmp al,254d
-		je game_over
-		loop verificar_game_over
+		;call CLEAN_CURRENT_MATRIX
 		call DIBUJA_ACTUAL
-		ret
-		game_over:
-		clear
-		posiciona_cursor 0,0
-		imprime_cadena_color msg_game_over,fin_msg_game_over-msg_game_over,cVerdeClaro,bgNegro
-		game_over_opcion:
-		mov ah,0
-		int 16h
-		cmp al,113
-		je salir
-		cmp al,112
-		je inicio
-		jmp game_over_opcion
-		ret
 		ret
 	endp
 
@@ -1511,31 +1491,13 @@ salir:				;inicia etiqueta salir
 		normal_der:
 		call ROT_MATRIX_HORA
 		call CODEC_MATRIX_3x3
-		jmp det_col_gir_der
-
-		girolinea_der:	;EXCLUSIVO PARA LA LINEA
-		mov sentido_giro,1
+		jmp fin_giro_der
+		girolinea_der:
+		mov aux_giro,1
 		call GIRO_LINEA
-		
-		det_col_gir_der:
-		;;;;DETECTA COLISIÓN
-		call DETECTAR_COLISION
-		cmp col_det,01H
-		je cancelar_giro_der
-		;;;;;;;;;;;;;;;;;;;;
 		fin_giro_der:
 		call DIBUJA_PIEZA
 		ret
-		cancelar_giro_der: ;Intenta conservar el giro desplazando a algun lado la pieza, si no puede, cancela el giro
-		call TRY_MOV_DER
-		cmp despl_lograd,1
-		je fin_giro_izq
-		call TRY_MOV_IZQ
-		cmp despl_lograd,1
-		je fin_giro_izq
-		call GIRO_IZQ
-		ret
-
 	endp
 
 	GIRO_IZQ proc
@@ -1547,35 +1509,13 @@ salir:				;inicia etiqueta salir
 		normal_iz:
 		call ROT_MATRIX_ANTIHORA
 		call CODEC_MATRIX_3x3
-		jmp det_col_gir_izq
-
-		girolinea_izq:  ;EXCLUSIVO PARA LINEA
-		mov sentido_giro,0
+		jmp fin_giro_izq
+		girolinea_izq:
+		mov aux_giro,0
 		call GIRO_LINEA
-
-		det_col_gir_izq:
-		;;;;DETECTA COLISIÓN
-		call DETECTAR_COLISION
-		cmp col_det,01H
-		je cancelar_giro_izq
-		;;;;;;;;;;;;;;;;;;;;
-
 		fin_giro_izq:
 		call DIBUJA_PIEZA
 		ret
-
-		cancelar_giro_izq:  ;Intenta conservar el giro desplazando a algun lado la pieza, si no puede, cancela el giro
-		call TRY_MOV_IZQ
-		cmp despl_lograd,1
-		je fin_giro_izq
-		call TRY_MOV_DER
-		cmp despl_lograd,1
-		je fin_giro_izq
-		call GIRO_DER   ;Cancelamiento del giro
-		ret
-
-		
-
 	endp
   
 	GIRO_LINEA proc
@@ -1583,7 +1523,7 @@ salir:				;inicia etiqueta salir
 	lea si, [pieza_rens] ;eje y
 	mov al, pieza_ren
 	mov ah, pieza_col
-	cmp sentido_giro, 0 ;Gira a la izquierda
+	cmp aux_giro, 0 ;Gira a la izquierda
 	je GIROS_IZQUIERDOS
 	jmp GIROS_DERECHOS
 	GIROS_IZQUIERDOS:
@@ -1727,8 +1667,8 @@ salir:				;inicia etiqueta salir
 		;detectar colisión 
 		mov ah,08h ;checa la casilla y obtiene color (ah) y caracter (al)
 		int 10H
-		cmp al,32d
-		jz no_colision
+		cmp al,254d
+		jnz no_colision
 			mov col_det,01h
 	no_colision:
 		pop di
@@ -1740,116 +1680,7 @@ salir:				;inicia etiqueta salir
 		ret
 	endp
 
-
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;Intenta hacer un desplazamiento a la derecha, si provoca colisión, regresa la pieza adonde estaba originalmente
-	;edita la variable despl_logrado. Se creó para los desplazamientos provocadas por los giros.
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	TRY_MOV_DER proc
-		mov despl_lograd,0
-		cmp pieza_cols,lim_derecho
-		je try_dejar_mover_der
-		cmp pieza_cols+1,lim_derecho
-		je try_dejar_mover_der
-		cmp pieza_cols+2,lim_derecho
-		je try_dejar_mover_der
-		cmp pieza_cols+3,lim_derecho
-		je try_dejar_mover_der
-
-		lea di,[pieza_cols]
-		inc pieza_col
-		mov CX, 4
-		try_loop_der:
-		mov al,[di]
-		inc al
-		mov [di],al
-		inc di
-		loop try_loop_der
-
-		;;;DETECTA COLISIÓN;;;;;;
-		call DETECTAR_COLISION
-		cmp col_det,01H
-		je try_cancelar_movimiento_d
-		;;;;;;;;;;;;;;;;;;
-
-		mov despl_lograd,1
-		call DIBUJA_PIEZA
-		ret
-		try_cancelar_movimiento_d:
-		mov despl_lograd,0
-		;;;;;;;;;;; Se forza la pieza a regresar a su lugar
-		lea di,[pieza_cols]
-		dec pieza_col
-		mov CX, 4
-		force_izq:
-		mov al,[di]
-		dec al
-		mov [di],al
-		inc di
-		loop force_izq
-		;;;;;;;;;;;;;;;;;;
-		;call DIBUJA_PIEZA
-		ret
-		;;;;
-		call MOVER_IZQ
-		try_dejar_mover_der:
-		ret
-	endp
-
-
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;Intenta hacer un desplzamiento a la izquierda, si provoca colisión, regresa la pieza a donde estaba originalmente
-	;edita la variable despl_logrado. Se creó para los desplazamientos provocadas por los giros.
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	TRY_MOV_IZQ proc
-		mov despl_lograd,0
-		cmp pieza_cols,lim_izquierdo
-		je try_dejar_mover_izq
-		cmp pieza_cols+1,lim_izquierdo
-		je try_dejar_mover_izq
-		cmp pieza_cols+2,lim_izquierdo
-		je try_dejar_mover_izq
-		cmp pieza_cols+3,lim_izquierdo
-		je try_dejar_mover_izq
-		
-		;call BORRA_PIEZA
-		lea di,[pieza_cols]
-		dec pieza_col
-		mov CX, 4
-		try_loop_izq:
-		mov al,[di]
-		dec al
-		mov [di],al
-		inc di
-		loop try_loop_izq
-
-		;;;DETECTA COLISIÓN;;;;;;
-		call DETECTAR_COLISION
-		cmp col_det,01H
-		je try_cancelar_movimiento_i
-		;;;;;;;;;;;;;;;;;;
-
-		mov despl_lograd,1
-		call DIBUJA_PIEZA
-		ret
-		try_cancelar_movimiento_i:
-		;;;;FUERZA LA PIEZA A REGRESAR DONDE ESTABA
-		lea di,[pieza_cols]
-		inc pieza_col
-		mov CX, 4
-		force_der:
-		mov al,[di]
-		inc al
-		mov [di],al
-		inc di
-		loop force_der
-		;;;;;;;;;;
-		mov despl_lograd,0
-		try_dejar_mover_izq:
-		ret
-	endp
-	
-		CHECK_LINEA proc
+	CHECK_LINEA proc
 		;23,1 inferior izquierdo
 		;23,30 inferior derecho
 		mov [aux_columna_linea],23
@@ -1937,7 +1768,7 @@ salir:				;inicia etiqueta salir
 		salir_todos_loop2:
 		ret
 	endp
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;;;;;;;;;;;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;ESTO ES NADA MÁS PARA HACER DEBUG VISUAL
 	; mov [boton_caracter],95d
