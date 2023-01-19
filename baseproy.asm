@@ -117,9 +117,8 @@ snormal 		equ 	5
 sinvertida 		equ 	6
 
 ;status
-paro 			equ 	0
 activo 			equ 	1
-pausa			equ 	2pieza_col
+pausa			equ 	0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;////////////////////////////////////////////////////
@@ -198,7 +197,8 @@ tick_ms			dw 		55 		;55 ms por cada tick del sistema, esta variable se usa para 
 mil				dw		1000 	;dato de valor decimal 1000 para operación DIV entre 1000
 diez 			dw 		10
 
-status 			db 		0 		;Status de juegos: 0 stop, 1 active, 2 pause
+status 			db 		activo 		;Status de juego: 0 pausa, 1 activo
+
 conta 			db 		0 		;Contador auxiliar para algunas operaciones
 
 ;Variables que sirven de parámetros de entrada para el procedimiento IMPRIME_BOTON
@@ -404,6 +404,9 @@ imprime_ui:
 ;Si el botón está suelto, continúa a la sección "mouse"
 ;si no, se mantiene indefinidamente en "mouse_no_clic" hasta que se suelte
 mouse_no_clic:
+cmp [status],pausa
+je mouse
+
 ;;;;;;;;;;;;;;CONTROL DE TECLADO (SO FAR);;;;;;;;;;;;;;;
 teclado:
 	call GRAVEDAD
@@ -488,7 +491,44 @@ conversion_mouse:
 	;se va a revisar si fue dentro del boton [X]
 	cmp dx,0
 	je boton_x
+  cmp dx,pause_sup
+	jge botones_auxiliares
 	jmp mouse_no_clic
+
+	botones_auxiliares:
+	cmp dx,pause_inf
+	jbe	seleccion_boton_auxiliar
+	jmp mouse_no_clic
+
+	seleccion_boton_auxiliar:
+	cmp cx,stop_izq
+	jl mouse_no_clic
+	cmp cx,play_der
+	jg mouse_no_clic
+	cmp cx,stop_der
+	jbe inicio
+	cmp cx,pause_izq
+	jge verificar_pausa_play
+	jmp mouse_no_clic
+
+	verificar_pausa_play:
+	cmp cx,pause_der
+	jbe pausar
+	cmp cx,play_izq
+	jge dar_play
+	jmp mouse_no_clic
+
+	pausar:
+	mov [status], 0
+	jmp revisar_status
+
+	dar_play:
+	mov [status],1
+	jmp revisar_status
+
+	revisar_status:
+	cmp [status],pausa
+	je mouse
 boton_x:
 	jmp boton_x1
 ;Lógica para revisar si el mouse fue presionado en [X]
