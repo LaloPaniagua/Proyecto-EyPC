@@ -10,6 +10,7 @@ title "Proyecto: Tetris" ;codigo opcional. Descripcion breve del programa, el te
 	aux_linea db 1
 	aux_columna_linea db 0
 	aux_linea_borrar db 1
+	color db 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Definición de constantes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1024,7 +1025,7 @@ salir:				;inicia etiqueta salir
 		push si
 		push di
 		posiciona_cursor [si],[di]
-		imprime_caracter_color 32,0,0
+		imprime_caracter_color 0,0,0
 		pop di
 		pop si
 		pop cx
@@ -1871,7 +1872,6 @@ salir:				;inicia etiqueta salir
 		check_linea_borrar:
 		call BORRAR_LINEA_PUNTO
 		call RECORRER_ABAJO
-		call QUITAR_ULTIMA
 		jmp salir_todos_loop
 		salir_linea_loop:
 		dec [aux_columna_linea]
@@ -1886,7 +1886,7 @@ salir:				;inicia etiqueta salir
 		mov [aux_linea_borrar],1
 		aux_linea_loop2:
 			posiciona_cursor [aux_columna_linea],[aux_linea_borrar]
-			imprime_caracter_color 254,1,1
+			imprime_caracter_color 0,0,0
 			inc [aux_linea_borrar]
 			cmp [aux_linea_borrar],31
 			je salir_linea_loop2
@@ -1897,7 +1897,7 @@ salir:				;inicia etiqueta salir
 
 	RECORRER_ABAJO proc
 		dec [aux_columna_linea]
-		;push [aux_columna_linea]
+		mov dl,[aux_columna_linea]
 		aux_columna_loop2:
 		mov [aux_linea],1
 		aux_linea_loop3:
@@ -1906,6 +1906,8 @@ salir:				;inicia etiqueta salir
 			int 10h
 			cmp al,254
 			je mover_abajo_recorrer
+			cmp al,0
+			je mover_abajo_recorrer_nulo
 			volver_recorrer_abajo:
 			inc [aux_linea]
 			cmp [aux_linea],31
@@ -1920,6 +1922,13 @@ salir:				;inicia etiqueta salir
 			imprime_caracter_color 254,[color],bgGrisOscuro
 			dec [aux_columna_linea]
 			jmp volver_recorrer_abajo
+		mover_abajo_recorrer_nulo:
+			inc [aux_columna_linea]
+			posiciona_cursor [aux_columna_linea],[aux_linea]
+			imprime_caracter_color 0,0,0
+			dec [aux_columna_linea]
+			jmp volver_recorrer_abajo
+		jmp volver_recorrer_abajo
 		salir_linea_loop3:
 		dec [aux_columna_linea]
 		cmp [aux_columna_linea],10
@@ -1928,34 +1937,6 @@ salir:				;inicia etiqueta salir
 		salir_todos_loop2:
 		ret
 	endp
-
-	QUITAR_ULTIMA proc
-		;pop [aux_columna_linea]
-		aux_columna_loop5:
-		mov [aux_linea],1
-		aux_linea_loop5:
-			posiciona_cursor [aux_columna_linea],[aux_linea]
-			;imprime_caracter_color 254,1,1
-			mov ah,8
-			int 10h
-			cmp al,0
-			jne salir_linea_loop5
-			inc [aux_linea]
-			cmp [aux_linea],31
-			jne aux_linea_loop5
-			inc [aux_columna_linea]
-			call BORRAR_LINEA_PUNTO
-			jmp salir_todos_loop5
-		salir_linea_loop5:
-		dec [aux_columna_linea]
-		cmp [aux_columna_linea],10
-		je salir_todos_loop5
-		jmp aux_columna_loop5
-		salir_todos_loop5:
-		ret 
-	endp
-
-
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;ESTO ES NADA MÁS PARA HACER DEBUG VISUAL
