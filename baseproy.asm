@@ -137,6 +137,7 @@ nextStr			db 		"NEXT"
 finNextStr 		db 		""
 blank			db 		"     "
 lines_score 	dw 		0
+lines_level dw 0
 hiscore 		dw 		0
 speed 			dw 		4
 next 			db 		?
@@ -686,7 +687,7 @@ salir:				;inicia etiqueta salir
 	IMPRIME_LEVEL proc
 		mov [ren_aux],level_ren
 		mov [col_aux],level_col+20
-		mov bx,[lines_score]
+		mov bx,[lines_level]
 		call IMPRIME_BX
 		ret
 	endp
@@ -1871,13 +1872,20 @@ salir:				;inicia etiqueta salir
 			int 10h
 			cmp al,254
 			jne salir_linea_loop ;sale si no hay cuadro
-			cmp ah,0
+			cmp ah,32
 			je salir_linea_loop
 			inc [aux_linea]
 			cmp [aux_linea],31
 			je check_linea_borrar
 			jmp aux_linea_loop
 		check_linea_borrar:
+		inc [lines_score]
+		mov ax,[lines_score]
+		cmp ax,[hiscore]
+		jbe no_quitar_high
+		mov [hiscore],ax
+		no_quitar_high:
+		call IMPRIME_SCORES
 		call BORRAR_LINEA_PUNTO
 		call RECORRER_ABAJO
 		jmp salir_todos_loop
