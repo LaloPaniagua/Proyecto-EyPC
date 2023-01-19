@@ -1452,10 +1452,30 @@ salir:				;inicia etiqueta salir
 		mov pieza_col,ini_columna
 		call GENERAR_PIEZA_NEXT
 		call BORRA_NEXT
-		;call CLEAN_CURRENT_MATRIX
 		call DIBUJA_NEXT
-		;call CLEAN_CURRENT_MATRIX
+		mov cx,30
+		verificar_game_over:
+		posiciona_cursor 3,cl
+		mov ah,08h
+		int 10h
+		cmp al,254d
+		je game_over
+		loop verificar_game_over
 		call DIBUJA_ACTUAL
+		ret
+		game_over:
+		clear
+		posiciona_cursor 0,0
+		imprime_cadena_color msg_game_over,fin_msg_game_over-msg_game_over,cVerdeClaro,bgNegro
+		game_over_opcion:
+		mov ah,0
+		int 16h
+		cmp al,113
+		je salir
+		cmp al,112
+		je inicio
+		jmp game_over_opcion
+		ret
 		ret
 	endp
 
