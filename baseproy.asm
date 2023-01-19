@@ -1464,6 +1464,7 @@ salir:				;inicia etiqueta salir
 		ret
 		fin_juego:
 		call SCREEN_GAMEOVER
+		jmp imprime_ui
 		ret
 		
 	endp
@@ -1482,7 +1483,11 @@ salir:				;inicia etiqueta salir
 		cmp al,113 
 		je salir
 		cmp al,112
-		je imprime_ui
+		je reiniciar_juego
+		jmp game_over_opcion
+		reiniciar_juego:
+		mov ah,08h 
+		int 21h
 		ret
 	endp
 
